@@ -1,0 +1,379 @@
+@import "tailwindcss" source(none);
+@source "../";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Mashal Olympics Sports Wear — design system.
+ * Dark charcoal "torch" theme: near-black warm surfaces, flame-orange accents.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-flame: var(--flame);
+  --color-ember: var(--ember);
+  --font-display: "Bebas Neue", "Barlow", sans-serif;
+  --font-sans: "Barlow", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: oklch(0.08 0 0);
+  --foreground: oklch(1 0 0);
+  --card: oklch(1 0 0 / 0.05);
+  --card-foreground: oklch(1 0 0);
+  --popover: oklch(0.12 0 0);
+  --popover-foreground: oklch(1 0 0);
+  --primary: oklch(0.6 0.24 29);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.18 0 0);
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.18 0 0);
+  --muted-foreground: oklch(0.78 0 0);
+  --accent: oklch(0.64 0.25 27);
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(1 0 0 / 0.15);
+  --input: oklch(1 0 0 / 0.18);
+  --ring: oklch(0.6 0.24 29);
+  --flame: oklch(1 0 0);
+  --ember: oklch(0.64 0.25 27);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+
+  ::selection {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* ---------- Motion keyframes ---------- */
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes kenburns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.16);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes scroll-hint {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+}
+
+/* ---------- Utilities ---------- */
+
+@utility marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 30s linear infinite;
+  will-change: transform;
+}
+
+@utility kenburns {
+  animation: kenburns 20s ease-out forwards;
+  will-change: transform;
+}
+
+@utility pulse-glow {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+@utility float-y {
+  animation: float-y 5s ease-in-out infinite;
+}
+
+@utility scroll-hint {
+  animation: scroll-hint 1.8s ease-in-out infinite;
+}
+
+@utility text-flame {
+  background-image: linear-gradient(
+    95deg,
+    var(--color-flame) 10%,
+    var(--primary) 45%,
+    var(--ember) 90%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+@utility text-glow {
+  text-shadow:
+    0 0 22px color-mix(in oklab, var(--primary) 55%, transparent),
+    0 0 90px color-mix(in oklab, var(--ember) 35%, transparent);
+}
+
+@utility flame-border {
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--primary) 70%, transparent),
+      transparent 45%,
+      color-mix(in oklab, var(--ember) 55%, transparent)
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+@utility shine {
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      transparent 42%,
+      color-mix(in oklab, white 16%, transparent) 50%,
+      transparent 58%
+    );
+    transform: translateX(-130%);
+    transition: transform 0.7s ease;
+    pointer-events: none;
+  }
+
+  &:hover::after {
+    transform: translateX(130%);
+  }
+}
+
+/* ---------- Scroll reveal ---------- */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(44px);
+  transition:
+    opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.reveal-left {
+  transform: translateX(-56px);
+}
+
+.reveal-right {
+  transform: translateX(56px);
+}
+
+.reveal-scale {
+  transform: scale(0.9);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .marquee-track,
+  .kenburns,
+  .pulse-glow,
+  .float-y,
+  .scroll-hint {
+    animation: none;
+  }
+}
+
+/* ---------- 3D cylinder gallery ---------- */
+
+.cylinder-stage {
+  perspective: 1500px;
+  perspective-origin: 50% 45%;
+}
+
+.cylinder-ring {
+  --cyl-radius: clamp(190px, 26vw, 320px);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.cylinder-item {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: clamp(170px, 20vw, 260px);
+  aspect-ratio: 3 / 4;
+  margin: 0;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 1px solid color-mix(in oklab, var(--primary) 35%, transparent);
+  box-shadow: 0 30px 60px -20px color-mix(in oklab, black 75%, transparent);
+  backface-visibility: hidden;
+}
+
+/* ---------- Header / misc ---------- */
+
+.header-solid {
+  background-color: color-mix(in oklab, var(--background) 88%, transparent);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+}
+
+.nav-link {
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -4px;
+    height: 2px;
+    width: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--primary), var(--ember));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+  }
+
+  &:hover::after,
+  &[data-active="true"]::after {
+    transform: scaleX(1);
+  }
+}
+
+.product-card img {
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.product-card:hover img {
+  transform: scale(1.08) rotate(-1deg);
+}
+
+.stat-number {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Subtle glassmorphism ---------- */
+body {
+  background-image:
+    radial-gradient(
+      40rem 30rem at 85% 10%,
+      color-mix(in oklab, var(--primary) 18%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      36rem 28rem at 10% 60%,
+      color-mix(in oklab, var(--accent) 12%, transparent),
+      transparent 70%
+    );
+  background-attachment: fixed;
+}
+.bg-card,
+.product-card {
+  background-color: color-mix(in oklab, var(--background) 55%, transparent);
+  backdrop-filter: blur(14px) saturate(130%);
+  box-shadow:
+    0 10px 40px -15px oklch(0 0 0 / 0.7),
+    inset 0 1px 0 oklch(1 0 0 / 0.08);
+}
