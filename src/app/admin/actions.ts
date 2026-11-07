@@ -39,24 +39,28 @@ export async function createProduct(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const categoryId = String(formData.get("category_id") ?? "");
   const description = String(formData.get("description") ?? "").trim();
-  const imageUrl = String(formData.get("image_url") ?? "").trim();
+  const imageUrls = parseProductImages(formData.get("image_urls"));
   const rawPrice = String(formData.get("price") ?? "").trim();
-  const rawCurrency = String(formData.get("currency") ?? "")
-    .trim()
-    .toUpperCase();
+  const sizes = parseProductOptions(formData.get("available_sizes"), 40);
+  const colours = parseProductOptions(formData.get("available_colours"), 60);
+  const stockQuantity = parseStockQuantity(formData.get("stock_quantity"));
   const isActive = formData.get("is_active") === "on";
 
-  if (name.length < 1 || name.length > 160 || description.length > 4000) {
+  if (
+    name.length < 1 ||
+    name.length > 160 ||
+    description.length > 4000 ||
+    !imageUrls ||
+    !sizes ||
+    !colours ||
+    stockQuantity === undefined
+  ) {
     redirect("/admin?error=product");
   }
-  if (imageUrl && !isSafeImageUrl(imageUrl)) redirect("/admin?error=image");
+  if (imageUrls.some((url) => !isSafeImageUrl(url))) redirect("/admin?error=image");
 
   const price = rawPrice ? Number(rawPrice) : null;
-  const currency = rawPrice ? rawCurrency : null;
-  if (
-    (rawPrice && (!Number.isFinite(price) || price! < 0 || !/^[A-Z]{3}$/.test(rawCurrency))) ||
-    (isActive && price === null)
-  ) {
+  if ((rawPrice && (!Number.isFinite(price) || price! < 0)) || (isActive && price === null)) {
     redirect("/admin?error=price");
   }
 
@@ -67,9 +71,13 @@ export async function createProduct(formData: FormData) {
     slug: `${slugBase}-${crypto.randomUUID().slice(0, 8)}`,
     name,
     description,
-    image_url: imageUrl,
+    image_url: imageUrls[0] ?? "",
+    image_urls: imageUrls,
     price,
-    currency,
+    currency: rawPrice ? "PKR" : null,
+    available_sizes: sizes,
+    available_colours: colours,
+    stock_quantity: stockQuantity,
     is_active: isActive,
   });
   if (error) {
@@ -180,11 +188,11 @@ export async function updateProduct(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const categoryId = String(formData.get("category_id") ?? "");
   const description = String(formData.get("description") ?? "").trim();
-  const imageUrl = String(formData.get("image_url") ?? "").trim();
+  const imageUrls = parseProductImages(formData.get("image_urls"));
   const rawPrice = String(formData.get("price") ?? "").trim();
-  const rawCurrency = String(formData.get("currency") ?? "")
-    .trim()
-    .toUpperCase();
+  const sizes = parseProductOptions(formData.get("available_sizes"), 40);
+  const colours = parseProductOptions(formData.get("available_colours"), 60);
+  const stockQuantity = parseStockQuantity(formData.get("stock_quantity"));
   const price = rawPrice ? Number(rawPrice) : null;
 
   if (
@@ -192,13 +200,17 @@ export async function updateProduct(formData: FormData) {
     !/^[0-9a-f-]{36}$/i.test(categoryId) ||
     !name ||
     name.length > 160 ||
-    description.length > 4000
+    description.length > 4000 ||
+    !imageUrls ||
+    !sizes ||
+    !colours ||
+    stockQuantity === undefined
   ) {
     redirect("/admin?error=product");
   }
-  if (imageUrl && !isSafeImageUrl(imageUrl)) redirect("/admin?error=image");
+  if (imageUrls.some((url) => !isSafeImageUrl(url))) redirect("/admin?error=image");
   if (
-    (rawPrice && (!Number.isFinite(price) || price! < 0 || !/^[A-Z]{3}$/.test(rawCurrency))) ||
+    (rawPrice && (!Number.isFinite(price) || price! < 0)) ||
     (formData.get("is_active") === "on" && price === null)
   ) {
     redirect("/admin?error=price");
@@ -209,9 +221,13 @@ export async function updateProduct(formData: FormData) {
       name,
       category_id: categoryId,
       description,
-      image_url: imageUrl,
+      image_url: imageUrls[0] ?? "",
+      image_urls: imageUrls,
       price,
-      currency: rawPrice ? rawCurrency : null,
+      currency: rawPrice ? "PKR" : null,
+      available_sizes: sizes,
+      available_colours: colours,
+      stock_quantity: stockQuantity,
       is_active: formData.get("is_active") === "on",
     })
     .eq("id", id);
@@ -220,7 +236,15 @@ export async function updateProduct(formData: FormData) {
     redirect("/admin?error=product-save");
   }
   revalidateStorefront();
-  redirect("/admin?notice=product-updated");
+  const requestedPageSize = Number(formData.get("list_page_size"));
+  const pageSize =
+    Number.isInteger(requestedPageSize) && requestedPageSize >= 10 && requestedPageSize <= 500
+      ? requestedPageSize
+      : 10;
+  const expanded = formData.get("list_expanded") === "1";
+  redirect(
+    `/admin?notice=product-updated&expandedProduct=${encodeURIComponent(id)}&productPageSize=${pageSize}&productsExpanded=${expanded ? "1" : "0"}#products`,
+  );
 }
 
 export async function saveStorefrontContent(formData: FormData) {
@@ -301,7 +325,9 @@ export async function saveStorefrontContent(formData: FormData) {
       "phone",
       "email",
       "instagram_url",
-      "whatsapp_url",
+      "facebook_url",
+      "tiktok_url",
+      "whatsapp_number",
       "footer_shop_heading",
       "footer_company_heading",
       "footer_quote_heading",
@@ -357,8 +383,21 @@ export async function saveStorefrontContent(formData: FormData) {
     ) {
       redirect("/admin?error=image");
     }
-    if (["instagram_url", "whatsapp_url"].includes(field) && value && !isSafeHttpUrl(value)) {
+    if (
+      (field === "instagram_url" && value && !isSocialProfileUrl(value, "instagram.com")) ||
+      (field === "facebook_url" && value && !isSocialProfileUrl(value, "facebook.com")) ||
+      (field === "tiktok_url" && value && !isSocialProfileUrl(value, "tiktok.com"))
+    ) {
       redirect("/admin?error=content-url");
+    }
+    if (
+      field === "whatsapp_number" &&
+      value &&
+      (!/^\+?[\d\s().-]+$/.test(value) ||
+        value.replace(/\D/g, "").length < 7 ||
+        value.replace(/\D/g, "").length > 15)
+    ) {
+      redirect("/admin?error=whatsapp");
     }
     if (field === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
       redirect("/admin?error=content");
@@ -450,9 +489,46 @@ function parsePosition(value: FormDataEntryValue | null) {
   return Number.isInteger(position) && position >= 0 && position <= 10000 ? position : null;
 }
 
-function isSafeHttpUrl(value: string) {
+function parseProductImages(value: FormDataEntryValue | null): string[] | null {
+  if (typeof value !== "string") return null;
   try {
-    return ["https:", "http:"].includes(new URL(value).protocol);
+    const parsed: unknown = JSON.parse(value);
+    if (
+      !Array.isArray(parsed) ||
+      parsed.length > 12 ||
+      parsed.some((url) => typeof url !== "string" || url.length > 2048)
+    ) {
+      return null;
+    }
+    return [...new Set(parsed as string[])];
+  } catch {
+    return null;
+  }
+}
+
+function parseProductOptions(value: FormDataEntryValue | null, maxLength: number): string[] | null {
+  if (typeof value !== "string") return null;
+  const options = value
+    .split(",")
+    .map((option) => option.trim())
+    .filter(Boolean);
+  if (options.length > 30 || options.some((option) => option.length > maxLength)) return null;
+  return [...new Set(options)];
+}
+
+function parseStockQuantity(value: FormDataEntryValue | null): number | null | undefined {
+  if (value === null || String(value).trim() === "") return null;
+  const quantity = Number(value);
+  return Number.isInteger(quantity) && quantity >= 0 && quantity <= 100000 ? quantity : undefined;
+}
+
+function isSocialProfileUrl(value: string, domain: string) {
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === "https:" &&
+      (url.hostname === domain || url.hostname.endsWith(`.${domain}`))
+    );
   } catch {
     return false;
   }
@@ -461,6 +537,7 @@ function revalidateStorefront() {
   for (const path of ["/", "/shop", "/about", "/contact", "/admin"]) {
     revalidatePath(path);
   }
+  revalidatePath("/shop/[slug]", "page");
 }
 
 function slugify(value: string) {

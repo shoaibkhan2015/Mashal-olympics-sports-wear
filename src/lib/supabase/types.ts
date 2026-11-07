@@ -5,8 +5,12 @@ export type Product = {
   name: string;
   description: string;
   image_url: string;
+  image_urls: string[];
   price: number | null;
   currency: string | null;
+  available_sizes: string[];
+  available_colours: string[];
+  stock_quantity: number | null;
   is_active: boolean;
 };
 
@@ -36,5 +40,7 @@ export type Order = {
     unit_price: number;
     quantity: number;
     line_total: number;
+    selected_size?: string;
+    selected_colour?: string;
   }>;
 };

@@ -5,20 +5,20 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isMissingCmsSchemaError } from "@/lib/cms";
 import type { Order, Product } from "@/lib/supabase/types";
 import { MediaPicker } from "@/components/admin/media-picker";
+import { ProductImagePicker } from "@/components/admin/product-image-picker";
 import { ConfirmDeleteButton } from "@/components/admin/confirm-delete-button";
+import { ProductAdminList } from "@/components/admin/product-admin-list";
 import { CollapsibleCollection } from "@/components/admin/collapsible-collection";
 import { PasswordField } from "@/components/admin/password-field";
 import {
   createCategory,
   createProduct,
   deleteCategory,
-  deleteProduct,
   saveStorefrontContent,
   signIn,
   signOut,
   updateCategory,
   updateOrder,
-  updateProduct,
   updateQuote,
 } from "./actions";
 
@@ -30,7 +30,7 @@ const errorMessages: Record<string, string> = {
   signout: "Could not sign out. Please try again.",
   product: "Enter a valid product name and description.",
   image: "Use an image URL beginning with http://, https://, or a single /.",
-  price: "Active products need a non-negative price and a three-letter currency code.",
+  price: "Active products need a non-negative PKR price.",
   "product-save": "Product could not be saved. Check the category and slug, then try again.",
   "product-delete": "Product could not be deleted.",
   collection: "Enter a valid collection name, tagline, and display order.",
@@ -39,6 +39,7 @@ const errorMessages: Record<string, string> = {
     "This collection is in use by products or customer requests. Deactivate it instead of deleting it.",
   content: "Check the content fields and try again.",
   "content-url": "Social links must be complete http(s) URLs.",
+  whatsapp: "Enter a valid WhatsApp number with its country code (7–15 digits).",
   "content-save": "Storefront content could not be saved.",
   order: "The order status is invalid.",
   "order-save": "The order could not be updated.",
@@ -60,9 +61,24 @@ const noticeMessages: Record<string, string> = {
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; notice?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    notice?: string;
+    expandedProduct?: string;
+    productPageSize?: string;
+    productsExpanded?: string;
+  }>;
 }) {
   const params = await searchParams;
+  const requestedProductPageSize = Number(params.productPageSize ?? 10);
+  const productPageSize =
+    Number.isInteger(requestedProductPageSize) &&
+    requestedProductPageSize >= 10 &&
+    requestedProductPageSize <= 500
+      ? requestedProductPageSize
+      : 10;
+  const productsExpanded = params.productsExpanded === "1";
+  const initialProductLimit = productsExpanded ? productPageSize : 10;
   if (!isSupabaseConfigured()) {
     return (
       <AdminShell>
@@ -112,7 +128,7 @@ export default async function AdminPage({
 
   const [
     { data: categories, error: categoriesError },
-    { data: rawProducts, error: productsError },
+    { data: rawProducts, error: productsError, count: productCount },
     { data: rawOrders, error: ordersError },
     { data: quotes, error: quotesError },
     { data: contentRows, error: contentError },
@@ -123,12 +139,16 @@ export default async function AdminPage({
       .order("position"),
     supabase
       .from("products")
-      .select("id, category_id, slug, name, description, image_url, price, currency, is_active")
-      .order("created_at", { ascending: false }),
+      .select(
+        "id, category_id, slug, name, description, image_url, image_urls, price, currency, available_sizes, available_colours, stock_quantity, is_active",
+        { count: "exact" },
+      )
+      .order("created_at", { ascending: false })
+      .range(0, initialProductLimit - 1),
     supabase
       .from("orders")
       .select(
-        "id, order_number, customer_name, customer_email, customer_phone, notes, status, payment_status, currency, subtotal, created_at, order_items(id, product_name, unit_price, quantity, line_total)",
+        "id, order_number, customer_name, customer_email, customer_phone, notes, status, payment_status, currency, subtotal, created_at, order_items(id, product_name, unit_price, quantity, line_total, selected_size, selected_colour)",
       )
       .order("created_at", { ascending: false })
       .limit(50),
@@ -161,6 +181,19 @@ export default async function AdminPage({
     throw new Error(`Could not load the admin dashboard: ${message}`);
   }
   const products = (rawProducts ?? []) as Product[];
+  const editedProductResult = params.expandedProduct
+    ? await supabase
+        .from("products")
+        .select(
+          "id, category_id, slug, name, description, image_url, image_urls, price, currency, available_sizes, available_colours, stock_quantity, is_active",
+        )
+        .eq("id", params.expandedProduct)
+        .maybeSingle()
+    : null;
+  if (editedProductResult?.error) {
+    throw new Error(`Could not restore the edited product: ${editedProductResult.error.message}`);
+  }
+  const editedProduct = editedProductResult?.data ? (editedProductResult.data as Product) : null;
   const allCategories = categories ?? [];
   const content = Object.fromEntries(
     (contentRows ?? []).map((row) => [
@@ -306,7 +339,9 @@ export default async function AdminPage({
       </section>
 
       <section id="products" className="mt-14 scroll-mt-44">
-        <h2 className="font-display text-3xl uppercase">Products ({products.length})</h2>
+        <h2 className="font-display text-3xl uppercase">
+          Products ({productCount ?? products.length})
+        </h2>
         <form
           action={createProduct}
           className="mt-5 grid gap-4 rounded-2xl border border-border bg-card p-6 sm:grid-cols-2"
@@ -331,106 +366,45 @@ export default async function AdminPage({
             Price (leave blank for quote-only)
             <input name="price" type="number" min="0" step="0.01" className={inputClass} />
           </label>
+          <ProductImagePicker />
           <label className="grid gap-2 text-sm">
-            Currency (ISO 4217, e.g. PKR)
-            <input name="currency" minLength={3} maxLength={3} className={inputClass} />
+            Available sizes (comma-separated)
+            <input
+              name="available_sizes"
+              placeholder="S, M, L, XL"
+              maxLength={1200}
+              className={inputClass}
+            />
           </label>
-          <MediaPicker name="image_url" label="Product image" />
+          <label className="grid gap-2 text-sm">
+            Available colours (comma-separated)
+            <input
+              name="available_colours"
+              placeholder="Black, Red, Blue"
+              maxLength={1800}
+              className={inputClass}
+            />
+          </label>
+          <label className="grid gap-2 text-sm">
+            Stock quantity (leave blank for made to order)
+            <input name="stock_quantity" type="number" min={0} step={1} className={inputClass} />
+          </label>
           <label className="grid gap-2 text-sm sm:col-span-2">
             Description
             <textarea name="description" rows={3} maxLength={4000} className={inputClass} />
           </label>
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="is_active" /> Publish (requires a price and currency)
+            <input type="checkbox" name="is_active" /> Publish (requires a price)
           </label>
           <button className={buttonClass}>Add product</button>
         </form>
-        <div className="mt-4 grid gap-4">
-          {products.map((product) => (
-            <div key={product.id} className="rounded-2xl border border-border bg-card p-5">
-              <form action={updateProduct} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <input type="hidden" name="id" value={product.id} />
-                <label className="grid gap-2 text-sm">
-                  Product name
-                  <input
-                    required
-                    name="name"
-                    defaultValue={product.name}
-                    maxLength={160}
-                    className={inputClass}
-                  />
-                </label>
-                <label className="grid gap-2 text-sm">
-                  Collection
-                  <select
-                    required
-                    name="category_id"
-                    defaultValue={product.category_id}
-                    className={inputClass}
-                  >
-                    {allCategories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                        {!category.is_active ? " (hidden)" : ""}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="grid gap-2 text-sm">
-                  Price
-                  <input
-                    name="price"
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    defaultValue={product.price ?? ""}
-                    className={inputClass}
-                  />
-                </label>
-                <label className="grid gap-2 text-sm">
-                  Currency
-                  <input
-                    name="currency"
-                    minLength={3}
-                    maxLength={3}
-                    defaultValue={product.currency ?? ""}
-                    placeholder="PKR"
-                    className={inputClass}
-                  />
-                </label>
-                <MediaPicker
-                  name="image_url"
-                  initialUrl={product.image_url}
-                  label="Product image"
-                />
-                <label className="grid gap-2 text-sm sm:col-span-2 lg:col-span-3">
-                  Description
-                  <textarea
-                    name="description"
-                    rows={3}
-                    defaultValue={product.description}
-                    maxLength={4000}
-                    className={inputClass}
-                  />
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" name="is_active" defaultChecked={product.is_active} />{" "}
-                  Published
-                </label>
-                <button className={secondaryButtonClass}>Save product</button>
-              </form>
-              <form action={deleteProduct} className="mt-3 border-t border-border pt-3">
-                <input type="hidden" name="id" value={product.id} />
-                <ConfirmDeleteButton label={`the ${product.name} product`} />
-              </form>
-            </div>
-          ))}
-          {products.length === 0 && (
-            <p className="rounded-xl border border-border p-5 text-sm text-muted-foreground">
-              No products yet.
-            </p>
-          )}
-        </div>
+        <ProductAdminList
+          initialProducts={products}
+          total={productCount ?? products.length}
+          categories={allCategories}
+          editedProduct={editedProduct}
+          initiallyExpanded={productsExpanded}
+        />
       </section>
 
       <section id="pages" className="mt-14 scroll-mt-44">
@@ -485,6 +459,13 @@ export default async function AdminPage({
                   <li key={item.id}>
                     {item.quantity} × {item.product_name} — {order.currency}{" "}
                     {Number(item.line_total).toFixed(2)}
+                    {(item.selected_size || item.selected_colour) &&
+                      ` (${[
+                        item.selected_size && `Size: ${item.selected_size}`,
+                        item.selected_colour && `Colour: ${item.selected_colour}`,
+                      ]
+                        .filter(Boolean)
+                        .join(", ")})`}
                   </li>
                 ))}
               </ul>
@@ -627,7 +608,22 @@ function ContentEditor({
   const field = (name: string, label: string, multiline = false) => (
     <label key={name} className="grid gap-2 text-sm">
       {label}
-      {multiline ? (
+      {name === "whatsapp_number" ? (
+        <>
+          <input
+            type="tel"
+            name={name}
+            autoComplete="tel"
+            defaultValue={textValue(content, name)}
+            maxLength={30}
+            className={inputClass}
+          />
+          <span className="text-xs text-muted-foreground">
+            Include the international country code. Leave blank to hide the floating WhatsApp
+            button.
+          </span>
+        </>
+      ) : multiline ? (
         <textarea
           name={name}
           rows={3}
@@ -717,7 +713,9 @@ function ContentEditor({
       ["phone", "Contact phone"],
       ["email", "Contact email"],
       ["instagram_url", "Instagram URL"],
-      ["whatsapp_url", "WhatsApp URL"],
+      ["facebook_url", "Facebook URL"],
+      ["tiktok_url", "TikTok URL"],
+      ["whatsapp_number", "WhatsApp business number (include country code)"],
       ["footer_shop_heading", "Footer shop heading"],
       ["footer_company_heading", "Footer company heading"],
       ["footer_quote_heading", "Footer quote heading"],

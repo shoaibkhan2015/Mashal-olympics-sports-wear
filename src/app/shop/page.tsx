@@ -36,7 +36,9 @@ export default async function ShopPage({
     const supabase = createPublicSupabaseClient();
     const { data, error } = await supabase
       .from("products")
-      .select("id, category_id, slug, name, description, image_url, price, currency, is_active")
+      .select(
+        "id, category_id, slug, name, description, image_url, image_urls, price, currency, available_sizes, available_colours, stock_quantity, is_active",
+      )
       .eq("is_active", true)
       .in(
         "category_id",
@@ -97,7 +99,10 @@ export default async function ShopPage({
                           className="size-full object-cover"
                         />
                       ) : (
-                        <div className="size-full bg-gradient-to-br from-card via-background to-primary/20" aria-hidden />
+                        <div
+                          className="size-full bg-gradient-to-br from-card via-background to-primary/20"
+                          aria-hidden
+                        />
                       )}
                       <div
                         className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent"

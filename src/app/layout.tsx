@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { BasketProvider } from "@/components/basket-provider";
+import { WhatsAppButton } from "@/components/whatsapp-button";
 import { contentString, getStorefrontCategories, getStorefrontContent } from "@/lib/cms";
 import "./globals.css";
 
@@ -41,11 +43,14 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         />
       </head>
       <body>
-        <div className="flex min-h-screen flex-col bg-background text-foreground">
-          <SiteHeader siteContent={siteContent} />
-          <div className="flex-1">{children}</div>
-          <SiteFooter siteContent={siteContent} collections={collections} />
-        </div>
+        <BasketProvider>
+          <div className="flex min-h-screen flex-col bg-background text-foreground">
+            <SiteHeader siteContent={siteContent} />
+            <div className="flex-1">{children}</div>
+            <SiteFooter siteContent={siteContent} collections={collections} />
+            <WhatsAppButton number={contentString(siteContent, "whatsapp_number")} />
+          </div>
+        </BasketProvider>
       </body>
     </html>
   );

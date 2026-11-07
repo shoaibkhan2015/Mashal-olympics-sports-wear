@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Menu, ShoppingBag, X } from "lucide-react";
 import logo from "@/assets/mashal-logo.jpg";
 import { contentBoolean, contentString } from "@/lib/cms";
+import { useBasket } from "@/components/basket-provider";
 
 export function SiteHeader({ siteContent }: { siteContent: Record<string, unknown> }) {
   const [solid, setSolid] = useState(false);
+  const { count } = useBasket();
   const pathname = usePathname();
   const [openAt, setOpenAt] = useState<string | null>(null);
   const open = openAt === pathname; // the menu closes itself on navigation
@@ -60,6 +62,12 @@ export function SiteHeader({ siteContent }: { siteContent: Record<string, unknow
             </Link>
           ))}
           <Link
+            href="/shop#basket"
+            className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-semibold hover:border-primary"
+          >
+            <ShoppingBag className="size-4" /> {count}
+          </Link>
+          <Link
             href="/contact"
             className="shine inline-flex items-center rounded-full bg-primary px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-primary-foreground shadow-[0_8px_30px_-8px_color-mix(in_oklab,var(--primary)_60%,transparent)] transition-transform duration-300 hover:scale-105"
           >
@@ -88,6 +96,12 @@ export function SiteHeader({ siteContent }: { siteContent: Record<string, unknow
               {item.label}
             </Link>
           ))}
+          <Link
+            href="/shop#basket"
+            className="rounded-lg px-3 py-3 text-sm font-semibold uppercase tracking-wide text-foreground/90 hover:bg-card hover:text-primary"
+          >
+            Basket ({count})
+          </Link>
         </nav>
       )}
     </header>

@@ -24,6 +24,8 @@ export async function POST(request: Request) {
   const validItems = items.every(isOrderItem);
   const itemIds = validItems ? items.map((item) => item.productId) : [];
   const quantities = validItems ? items.map((item) => item.quantity) : [];
+  const sizes = validItems ? items.map((item) => item.size ?? "") : [];
+  const colours = validItems ? items.map((item) => item.colour ?? "") : [];
 
   if (
     name.length < 1 ||
@@ -36,7 +38,11 @@ export async function POST(request: Request) {
     items.length < 1 ||
     items.length > 20 ||
     !validItems ||
-    new Set(itemIds).size !== itemIds.length
+    new Set(
+      validItems
+        ? items.map((item) => `${item.productId}\u0000${item.size}\u0000${item.colour}`)
+        : [],
+    ).size !== itemIds.length
   ) {
     return NextResponse.json(
       { error: "Please check your order details and try again." },
@@ -55,12 +61,16 @@ export async function POST(request: Request) {
     p_notes: notes,
     p_product_ids: itemIds,
     p_quantities: quantities,
+    p_sizes: sizes,
+    p_colours: colours,
   });
 
   if (error || !data?.[0]) {
     console.error("Could not create order:", error?.message ?? "No order returned");
     const unavailable =
-      error?.message.includes("unavailable") || error?.message.includes("mixed currencies");
+      error?.message.includes("unavailable") ||
+      error?.message.includes("insufficient stock") ||
+      error?.message.includes("selected options");
     return NextResponse.json(
       {
         error: unavailable
@@ -74,7 +84,9 @@ export async function POST(request: Request) {
   return NextResponse.json({ order: data[0] }, { status: 201 });
 }
 
-function isOrderItem(item: unknown): item is { productId: string; quantity: number } {
+function isOrderItem(
+  item: unknown,
+): item is { productId: string; quantity: number; size?: string; colour?: string } {
   if (!item || typeof item !== "object") return false;
   const record = item as Record<string, unknown>;
   return (
@@ -83,6 +95,9 @@ function isOrderItem(item: unknown): item is { productId: string; quantity: numb
     typeof record.quantity === "number" &&
     Number.isInteger(record.quantity) &&
     record.quantity >= 1 &&
-    record.quantity <= 100
+    record.quantity <= 100 &&
+    (record.size === undefined || (typeof record.size === "string" && record.size.length <= 40)) &&
+    (record.colour === undefined ||
+      (typeof record.colour === "string" && record.colour.length <= 60))
   );
 }
