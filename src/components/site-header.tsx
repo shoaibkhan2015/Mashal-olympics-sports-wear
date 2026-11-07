@@ -5,19 +5,24 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import logo from "@/assets/mashal-logo.jpg";
+import { contentBoolean, contentString } from "@/lib/cms";
 
-const navItems = [
-  { href: "/", label: "Home" },
-  { href: "/shop", label: "Shop" },
-  { href: "/about", label: "About" },
-  { href: "/contact", label: "Contact" },
-];
-
-export function SiteHeader() {
+export function SiteHeader({ siteContent }: { siteContent: Record<string, unknown> }) {
   const [solid, setSolid] = useState(false);
   const pathname = usePathname();
   const [openAt, setOpenAt] = useState<string | null>(null);
   const open = openAt === pathname; // the menu closes itself on navigation
+  const navItems = [
+    { href: "/", label: contentString(siteContent, "nav_home", "Home") },
+    { href: "/shop", label: contentString(siteContent, "nav_shop", "Shop") },
+    ...(contentBoolean(siteContent, "show_about", true)
+      ? [{ href: "/about", label: contentString(siteContent, "nav_about", "About") }]
+      : []),
+    ...(contentBoolean(siteContent, "show_contact", true)
+      ? [{ href: "/contact", label: contentString(siteContent, "nav_contact", "Contact") }]
+      : []),
+  ];
+  const logoUrl = contentString(siteContent, "logo_url") || logo.src;
 
   useEffect(() => {
     const onScroll = () => setSolid(window.scrollY > 24);
@@ -35,8 +40,8 @@ export function SiteHeader() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="group flex items-center">
           <img
-            src={logo.src}
-            alt="Mashal Olympics Sports Wear"
+            src={logoUrl}
+            alt={contentString(siteContent, "brand_name", "Mashal Olympics Sports Wear")}
             width={220}
             height={110}
             className="h-16 w-auto rounded-lg transition-transform duration-300 group-hover:scale-105 sm:h-20"
@@ -58,7 +63,7 @@ export function SiteHeader() {
             href="/contact"
             className="shine inline-flex items-center rounded-full bg-primary px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-primary-foreground shadow-[0_8px_30px_-8px_color-mix(in_oklab,var(--primary)_60%,transparent)] transition-transform duration-300 hover:scale-105"
           >
-            Custom Order
+            {contentString(siteContent, "header_cta", "Custom Order")}
           </Link>
         </nav>
 

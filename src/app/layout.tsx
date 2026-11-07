@@ -2,22 +2,33 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { contentString, getStorefrontCategories, getStorefrontContent } from "@/lib/cms";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "Mashal Olympics Sports Wear",
-  description:
-    "Custom sportswear manufacturer — sports shorts, shirts, tank tops, gym wear, tracksuits, football kits, taekwondo, wushu and karate uniforms made to your design.",
-  openGraph: {
-    title: "Mashal Olympics Sports Wear",
-    description: "Custom sportswear and martial arts uniforms, made to your team's design.",
-    type: "website",
-  },
-  twitter: { card: "summary_large_image" },
-  icons: { icon: { url: "/favicon.png", type: "image/png" } },
-};
+export const dynamic = "force-dynamic";
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export async function generateMetadata(): Promise<Metadata> {
+  const site = await getStorefrontContent("site");
+  const name = contentString(site, "brand_name", "Mashal Olympics Sports Wear");
+  const description = contentString(
+    site,
+    "footer_text",
+    "Custom sportswear and martial arts uniforms made to your design.",
+  );
+  return {
+    title: name,
+    description,
+    openGraph: { title: name, description, type: "website" },
+    twitter: { card: "summary_large_image" },
+    icons: { icon: { url: "/favicon.png", type: "image/png" } },
+  };
+}
+
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const [siteContent, collections] = await Promise.all([
+    getStorefrontContent("site"),
+    getStorefrontCategories(),
+  ]);
   return (
     <html lang="en">
       <head>
@@ -31,9 +42,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         <div className="flex min-h-screen flex-col bg-background text-foreground">
-          <SiteHeader />
+          <SiteHeader siteContent={siteContent} />
           <div className="flex-1">{children}</div>
-          <SiteFooter />
+          <SiteFooter siteContent={siteContent} collections={collections} />
         </div>
       </body>
     </html>

@@ -1,7 +1,10 @@
-import { marqueeItems } from "@/lib/catalog";
+import type { StorefrontCategory } from "@/lib/cms";
 
-export function Marquee() {
-  const row = [...marqueeItems, ...marqueeItems];
+export function Marquee({ collections }: { collections: StorefrontCategory[] }) {
+  const row = [
+    ...collections.map((category) => category.name),
+    ...collections.map((category) => category.name),
+  ];
   return (
     <div className="relative overflow-hidden border-y border-border bg-card py-4">
       <div className="marquee-track items-center gap-10">

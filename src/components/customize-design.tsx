@@ -4,10 +4,16 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, ImagePlus, Scissors, Trash2 } from "lucide-react";
 import { Reveal } from "@/components/reveal";
-import { categories } from "@/lib/catalog";
+import { contentString, type StorefrontCategory } from "@/lib/cms";
 import { cn } from "@/lib/utils";
 
-export function CustomizeDesign() {
+export function CustomizeDesign({
+  categories,
+  content,
+}: {
+  categories: StorefrontCategory[];
+  content: Record<string, unknown>;
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -41,31 +47,31 @@ export function CustomizeDesign() {
       <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6">
         <Reveal className="text-center">
           <p className="text-xs font-bold tracking-[0.45em] uppercase text-primary">
-            Made To Order
+            {contentString(content, "design_eyebrow")}
           </p>
           <h2 className="mt-3 font-display text-5xl tracking-wide uppercase sm:text-6xl">
-            Customize <span className="text-flame">Your Design</span>
+            {contentString(content, "design_title")}{" "}
+            <span className="text-flame">{contentString(content, "design_highlight")}</span>
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-            Upload your design or logo, pick the product you want it on, and we&apos;ll get back to
-            you with a quote.
+            {contentString(content, "design_description")}
           </p>
         </Reveal>
 
         {sent ? (
           <Reveal className="mx-auto mt-12 max-w-xl rounded-2xl border border-primary/50 bg-background p-8 text-center">
             <CheckCircle2 className="mx-auto size-12 text-primary" />
-            <h3 className="mt-4 font-display text-3xl tracking-wider uppercase">Request Ready</h3>
+            <h3 className="mt-4 font-display text-3xl tracking-wider uppercase">Design Selected</h3>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              {categoryName} selected{fileName ? ` — “${fileName}”` : ""}. Our team will review your
-              design and reply with pricing and delivery time.
+              {categoryName} selected{fileName ? ` — “${fileName}”` : ""}. Nothing has been sent
+              yet. Continue to the quote form to add your contact details and attach the image.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <Link
-                href="/contact"
+                href={category ? `/contact?category=${encodeURIComponent(category)}` : "/contact"}
                 className="shine inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-primary-foreground transition-transform duration-300 hover:scale-105"
               >
-                Send To Our Team <ArrowRight className="size-4" />
+                Continue To Quote Form <ArrowRight className="size-4" />
               </Link>
               <button
                 type="button"
@@ -126,11 +132,10 @@ export function CustomizeDesign() {
                       <ImagePlus className="size-8" />
                     </span>
                     <p className="mt-5 font-display text-2xl tracking-wider uppercase">
-                      Upload Your Design
+                      {contentString(content, "design_upload_title")}
                     </p>
                     <p className="mt-2 text-sm text-muted-foreground">
-                      Drag &amp; drop an image here, or click to browse — logo, sketch or a photo of
-                      your idea (JPG / PNG).
+                      {contentString(content, "design_upload_description")}
                     </p>
                   </>
                 )}
@@ -153,10 +158,10 @@ export function CustomizeDesign() {
                   </span>
                   <div>
                     <h3 className="font-display text-2xl tracking-wider uppercase">
-                      Pick A Category
+                      {contentString(content, "design_category_title")}
                     </h3>
                     <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                      What should we make it on?
+                      {contentString(content, "design_category_prompt")}
                     </p>
                   </div>
                 </div>
@@ -179,12 +184,16 @@ export function CustomizeDesign() {
                       )}
                     >
                       <div className="relative aspect-[4/3] overflow-hidden">
-                        <img
-                          src={c.image}
-                          alt={c.name}
-                          loading="lazy"
-                          className="size-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
+                        {c.image ? (
+                          <img
+                            src={c.image}
+                            alt={c.name}
+                            loading="lazy"
+                            className="size-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          />
+                        ) : (
+                          <div className="size-full bg-gradient-to-br from-card via-background to-primary/20" aria-hidden />
+                        )}
                         <div
                           className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent"
                           aria-hidden
@@ -213,10 +222,10 @@ export function CustomizeDesign() {
               onClick={() => setSent(true)}
               className="shine inline-flex items-center gap-2 rounded-full bg-primary px-10 py-4 font-display text-xl tracking-[0.15em] uppercase text-primary-foreground shadow-[0_10px_40px_-10px_color-mix(in_oklab,var(--primary)_70%,transparent)] transition-transform duration-300 hover:scale-105"
             >
-              Request A Quote <ArrowRight className="size-5" />
+              {contentString(content, "design_button")} <ArrowRight className="size-5" />
             </button>
             <p className="mt-3 text-xs text-muted-foreground">
-              Demo preview — no information is sent yet.
+              This preview stays on your device. Continue to the quote form to send your request.
             </p>
           </Reveal>
         )}

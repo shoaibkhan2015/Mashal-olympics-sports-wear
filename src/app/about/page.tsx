@@ -3,48 +3,32 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import heroImg from "@/assets/hero.jpg";
 import { Reveal } from "@/components/reveal";
+import { contentString, getStorefrontContent } from "@/lib/cms";
 
-export const metadata: Metadata = {
-  title: "About Us | Mashal Olympics Sports Wear",
-  description:
-    "Mashal Olympics Sports Wear manufactures custom sportswear and martial arts uniforms for teams, clubs and athletes.",
-  openGraph: {
-    title: "About Us | Mashal Olympics Sports Wear",
-    description: "Custom sportswear and martial arts uniforms for teams, clubs and athletes.",
-    type: "website",
-  },
-  twitter: { card: "summary_large_image" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const content = await getStorefrontContent("about");
+  const title = contentString(content, "seo_title");
+  const description = contentString(content, "seo_description");
+  return {
+    title,
+    description,
+    openGraph: { title, description },
+    twitter: { card: "summary_large_image" },
+  };
+}
 
-const stats = [
-  { value: "10+", label: "Product Lines" },
-  { value: "100%", label: "Made to Order" },
-  { value: "1 Roof", label: "Cut, Stitch & Print" },
-];
-
-const values = [
-  {
-    title: "Made Around Your Design",
-    text: "Nothing off the shelf unless you want it. Send a sketch, a photo or just your club colors — our team turns it into a production-ready kit.",
-  },
-  {
-    title: "Sport-Specific Craft",
-    text: "A taekwondo dobok, a wushu satin set and a football kit all demand different fabric, cut and finish. We build each one the way its sport needs.",
-  },
-  {
-    title: "Built for Match Day",
-    text: "Reinforced stitching, color-fast sublimation and competition-appropriate weights, so your kit performs as hard as you do.",
-  },
-];
-
-export default function AboutPage() {
+export default async function AboutPage() {
+  const content = await getStorefrontContent("about");
+  const stats = readRows(content.stats, "value", "label");
+  const values = readRows(content.values, "title", "text");
+  const banner = contentString(content, "banner_image") || heroImg.src;
   return (
     <main className="pt-28">
       {/* Banner */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0" aria-hidden>
           <img
-            src={heroImg.src}
+            src={banner}
             alt=""
             loading="lazy"
             width={1600}
@@ -55,13 +39,15 @@ export default function AboutPage() {
         </div>
         <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6">
           <Reveal variant="left">
-            <p className="text-xs font-bold tracking-[0.45em] uppercase text-primary">Our Story</p>
+            <p className="text-xs font-bold tracking-[0.45em] uppercase text-primary">
+              {contentString(content, "eyebrow")}
+            </p>
             <h1 className="mt-3 max-w-3xl font-display text-6xl leading-[0.95] tracking-wide uppercase sm:text-7xl">
-              The Torch Behind <span className="text-flame">Every Kit</span>
+              {contentString(content, "title")}{" "}
+              <span className="text-flame">{contentString(content, "highlight")}</span>
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-              Mashal means torch — the light athletes walk out behind. We make the gear they walk
-              out in.
+              {contentString(content, "description")}
             </p>
           </Reveal>
         </div>
@@ -96,16 +82,46 @@ export default function AboutPage() {
 
         <Reveal className="mt-20 text-center">
           <h2 className="font-display text-5xl tracking-wide uppercase sm:text-6xl">
-            Ready When <span className="text-flame">You Are</span>
+            {contentString(content, "cta_title")}{" "}
+            <span className="text-flame">{contentString(content, "cta_highlight")}</span>
           </h2>
           <Link
             href="/contact"
             className="shine mt-8 inline-flex items-center gap-2 rounded-full bg-primary px-10 py-4 font-display text-xl tracking-[0.15em] uppercase text-primary-foreground transition-transform duration-300 hover:scale-105"
           >
-            Start Your Order <ArrowRight className="size-5" />
+            {contentString(content, "cta_button")} <ArrowRight className="size-5" />
           </Link>
         </Reveal>
       </section>
     </main>
   );
+}
+
+function readRows(
+  value: unknown,
+  firstKey: "value",
+  secondKey: "label",
+): Array<{ value: string; label: string }>;
+function readRows(
+  value: unknown,
+  firstKey: "title",
+  secondKey: "text",
+): Array<{ title: string; text: string }>;
+function readRows(
+  value: unknown,
+  firstKey: "value" | "title",
+  secondKey: "label" | "text",
+): Array<{ value: string; label: string } | { title: string; text: string }> {
+  if (!Array.isArray(value)) return [];
+  const rows: Array<{ value: string; label: string } | { title: string; text: string }> = [];
+  for (const row of value) {
+    if (!row || typeof row !== "object") continue;
+    const record = row as Record<string, unknown>;
+    const first = record[firstKey];
+    const second = record[secondKey];
+    if (typeof first !== "string" || typeof second !== "string") continue;
+    if (firstKey === "value") rows.push({ value: first, label: second });
+    else rows.push({ title: first, text: second });
+  }
+  return rows;
 }
