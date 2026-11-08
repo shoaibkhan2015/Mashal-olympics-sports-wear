@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Facebook, Instagram, Mail, Phone } from "lucide-react";
-import logo from "@/assets/mashal-logo.jpg";
 import { contentBoolean, contentString, type StorefrontCategory } from "@/lib/cms";
 
 export function SiteFooter({
@@ -10,8 +9,8 @@ export function SiteFooter({
   siteContent: Record<string, unknown>;
   collections: StorefrontCategory[];
 }) {
-  const logoUrl = contentString(siteContent, "logo_url") || logo.src;
-  const brandName = contentString(siteContent, "brand_name", "Mashal Olympics Sports Wear");
+  const logoUrl = contentString(siteContent, "logo_url") || "/knockout-logo.webp";
+  const brandName = contentString(siteContent, "brand_name", "Knockout Sports Wear");
   const email = contentString(siteContent, "email");
   const phone = contentString(siteContent, "phone");
   const instagramUrl = contentString(siteContent, "instagram_url");

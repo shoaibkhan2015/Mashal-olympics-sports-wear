@@ -10,13 +10,13 @@ export type StorefrontCategory = Category & {
 
 const contentDefaults: Record<string, Record<string, unknown>> = {
   home: {
-    seo_title: "Mashal Olympics Sports Wear | Custom Sportswear & Martial Arts Uniforms",
+    seo_title: "Knockout Sports Wear | Custom Sportswear & Martial Arts Uniforms",
     seo_description:
       "Custom sports shorts, shirts, tank tops, gym wear, tracksuits, football kits and martial arts uniforms made to your design.",
     hero_eyebrow: "Custom Sportswear Manufacturer",
-    hero_title: "Mashal",
-    hero_highlight: "Olympics",
-    hero_subtitle: "Sports Wear",
+    hero_title: "Knockout",
+    hero_highlight: "Sports",
+    hero_subtitle: "Wear",
     hero_description:
       "Shorts, shirts, tank tops, gym wear, tracksuits, football kits and martial arts uniforms — every piece stitched to your design, your colors, your team.",
     hero_image: "",
@@ -55,18 +55,18 @@ const contentDefaults: Record<string, Record<string, unknown>> = {
     feature_4_text: "Streamlined production and dispatch so your kit arrives before match day.",
   },
   about: {
-    seo_title: "About Us | Mashal Olympics Sports Wear",
+    seo_title: "About Us | Knockout Sports Wear",
     seo_description:
-      "Mashal Olympics Sports Wear manufactures custom sportswear and martial arts uniforms for teams, clubs and athletes.",
+      "Knockout Sports Wear makes custom sportswear and martial arts uniforms for teams, clubs and athletes.",
     eyebrow: "Our Story",
-    title: "The Torch Behind",
-    highlight: "Every Kit",
+    title: "Built for",
+    highlight: "Every Match",
     banner_image: "",
     cta_title: "Ready When",
     cta_highlight: "You Are",
     cta_button: "Start Your Order",
     description:
-      "Mashal means torch — the light athletes walk out behind. We make the gear they walk out in.",
+      "Knockout Sports Wear creates custom sportswear and martial arts uniforms designed around your team, your sport, and your identity.",
     stats: [
       { value: "10+", label: "Product Lines" },
       { value: "100%", label: "Made to Order" },
@@ -92,8 +92,8 @@ const contentDefaults: Record<string, Record<string, unknown>> = {
     nav_shop: "Shop",
     nav_about: "About",
     nav_contact: "Contact",
-    brand_name: "Mashal Olympics Sports Wear",
-    logo_url: "",
+    brand_name: "Knockout Sports Wear",
+    logo_url: "/knockout-logo.webp",
     footer_text:
       "Custom sportswear and martial arts uniforms — stitched, sublimated and finished to your team's design.",
     header_cta: "Custom Order",
@@ -117,7 +117,7 @@ const contentDefaults: Record<string, Record<string, unknown>> = {
     footer_quote_cta: "Start Inquiry",
   },
   shop: {
-    seo_title: "Shop | Mashal Olympics Sports Wear",
+    seo_title: "Shop | Knockout Sports Wear",
     seo_description:
       "Browse custom sportswear and martial arts uniforms made to your team's design.",
     eyebrow: "The Collection",
@@ -129,7 +129,7 @@ const contentDefaults: Record<string, Record<string, unknown>> = {
     collection_badge: "Made to Order",
   },
   contact: {
-    seo_title: "Custom Order & Quote | Mashal Olympics Sports Wear",
+    seo_title: "Custom Order & Quote | Knockout Sports Wear",
     seo_description: "Request a quote for custom sportswear and martial arts uniforms.",
     eyebrow: "Get a Quote",
     title: "Custom",

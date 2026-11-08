@@ -28,11 +28,15 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = await getProduct(slug);
+  const [product, siteContent] = await Promise.all([
+    getProduct(slug),
+    getStorefrontContent("site"),
+  ]);
+  const brandName = contentString(siteContent, "brand_name", "Knockout Sports Wear");
   if (!product) return { title: "Product not found" };
   return {
-    title: `${product.name} | Mashal Olympics Sports Wear`,
-    description: product.description || `Shop ${product.name} from Mashal Olympics Sports Wear.`,
+    title: `${product.name} | ${brandName}`,
+    description: product.description || `Shop ${product.name} from ${brandName}.`,
     openGraph: {
       title: product.name,
       description: product.description,

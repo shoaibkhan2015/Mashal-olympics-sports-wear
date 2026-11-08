@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, ShoppingBag, X } from "lucide-react";
-import logo from "@/assets/mashal-logo.jpg";
 import { contentBoolean, contentString } from "@/lib/cms";
 import { useBasket } from "@/components/basket-provider";
 
@@ -24,7 +23,7 @@ export function SiteHeader({ siteContent }: { siteContent: Record<string, unknow
       ? [{ href: "/contact", label: contentString(siteContent, "nav_contact", "Contact") }]
       : []),
   ];
-  const logoUrl = contentString(siteContent, "logo_url") || logo.src;
+  const logoUrl = contentString(siteContent, "logo_url") || "/knockout-logo.webp";
 
   useEffect(() => {
     const onScroll = () => setSolid(window.scrollY > 24);
@@ -43,7 +42,7 @@ export function SiteHeader({ siteContent }: { siteContent: Record<string, unknow
         <Link href="/" className="group flex items-center">
           <img
             src={logoUrl}
-            alt={contentString(siteContent, "brand_name", "Mashal Olympics Sports Wear")}
+            alt={contentString(siteContent, "brand_name", "Knockout Sports Wear")}
             width={220}
             height={110}
             className="h-16 w-auto rounded-lg transition-transform duration-300 group-hover:scale-105 sm:h-20"

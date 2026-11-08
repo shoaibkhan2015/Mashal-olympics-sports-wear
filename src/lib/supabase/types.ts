@@ -28,9 +28,11 @@ export type Order = {
   customer_name: string;
   customer_email: string;
   customer_phone: string;
+  customer_address: string;
   notes: string;
   status: string;
   payment_status: string;
+  payment_method: string;
   currency: string;
   subtotal: number;
   created_at: string;

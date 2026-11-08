@@ -148,7 +148,7 @@ export default async function AdminPage({
     supabase
       .from("orders")
       .select(
-        "id, order_number, customer_name, customer_email, customer_phone, notes, status, payment_status, currency, subtotal, created_at, order_items(id, product_name, unit_price, quantity, line_total, selected_size, selected_colour)",
+        "id, order_number, customer_name, customer_email, customer_phone, customer_address, notes, status, payment_status, payment_method, currency, subtotal, created_at, order_items(id, product_name, unit_price, quantity, line_total, selected_size, selected_colour)",
       )
       .order("created_at", { ascending: false })
       .limit(50),
@@ -454,6 +454,13 @@ export default async function AdminPage({
               <p className="mt-2 text-sm">
                 {order.customer_name} · {order.customer_email} · {order.customer_phone}
               </p>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+                Delivery address: {order.customer_address}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Payment method: {order.payment_method.replaceAll("_", " ")} · Items subtotal:{" "}
+                {order.currency} {Number(order.subtotal).toFixed(2)}
+              </p>
               <ul className="mt-3 list-inside list-disc text-sm text-muted-foreground">
                 {order.order_items.map((item) => (
                   <li key={item.id}>
@@ -578,7 +585,14 @@ export default async function AdminPage({
 function AdminShell({ children }: { children: React.ReactNode }) {
   return (
     <main className="mx-auto min-h-screen max-w-7xl px-4 pb-20 pt-32 sm:px-6">
-      <h1 className="font-display text-5xl uppercase">Store Admin</h1>
+      <img
+        src="/knockout-logo.webp"
+        alt="Knockout Sports Wear"
+        width={220}
+        height={124}
+        className="mb-5 h-12 w-auto object-contain sm:h-16"
+      />
+      <h1 className="font-display text-5xl uppercase">Knockout Store Admin</h1>
       <p className="mt-2 text-sm text-muted-foreground">Catalog, orders, and quote requests</p>
       <div className="mt-8">{children}</div>
     </main>

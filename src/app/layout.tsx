@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const site = await getStorefrontContent("site");
-  const name = contentString(site, "brand_name", "Mashal Olympics Sports Wear");
+  const name = contentString(site, "brand_name", "Knockout Sports Wear");
   const description = contentString(
     site,
     "footer_text",

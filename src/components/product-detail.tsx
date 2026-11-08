@@ -103,7 +103,7 @@ export function ProductDetail({ product }: { product: Product }) {
 
         <section className="lg:py-4">
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-primary">
-            Mashal Olympics Sports Wear
+            Knockout Sports Wear
           </p>
           <h1 className="mt-3 font-display text-4xl uppercase tracking-wide sm:text-5xl">
             {product.name}

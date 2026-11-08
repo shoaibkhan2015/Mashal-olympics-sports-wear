@@ -1,8 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
-const defaultMessage = "Hi! I have a question about Mashal Olympics Sports Wear.";
+const defaultMessage = "Hi! I have a question about Knockout Sports Wear.";
 
 export function WhatsAppButton({
   number,
@@ -14,14 +15,29 @@ export function WhatsAppButton({
   productSlug?: string;
 }) {
   const pathname = usePathname();
+  const [checkoutVisible, setCheckoutVisible] = useState(false);
   const digits = number.replace(/\D/g, "");
   const isProductPage = pathname.startsWith("/shop/") && pathname !== "/shop/";
+
+  useEffect(() => {
+    if (pathname !== "/shop") return;
+    const basket = document.getElementById("basket");
+    if (!basket) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setCheckoutVisible(entry.isIntersecting),
+      { threshold: 0.01 },
+    );
+    observer.observe(basket);
+    return () => observer.disconnect();
+  }, [pathname]);
 
   if (
     digits.length < 7 ||
     digits.length > 15 ||
     pathname.startsWith("/admin") ||
-    (isProductPage && !productName)
+    (isProductPage && !productName) ||
+    checkoutVisible
   ) {
     return null;
   }
@@ -38,8 +54,8 @@ export function WhatsAppButton({
       rel="noopener noreferrer"
       aria-label={
         productName
-          ? `Chat with Mashal Olympics Sports Wear on WhatsApp about ${productName}`
-          : "Chat with Mashal Olympics Sports Wear on WhatsApp"
+          ? `Chat with Knockout Sports Wear on WhatsApp about ${productName}`
+          : "Chat with Knockout Sports Wear on WhatsApp"
       }
       onClick={(event) => {
         if (!productName) return;

@@ -1,6 +1,6 @@
-# Mashal Olympics Sports Wear
+# Knockout Sports Wear
 
-Custom sportswear storefront — Next.js App Router, React, Tailwind CSS 4, and Supabase.
+Knockout Sports Wear storefront — Next.js App Router, React, Tailwind CSS 4, and Supabase.
 
 ## Run locally
 
@@ -15,7 +15,7 @@ Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.loca
 ## Set up Supabase
 
 1. Create a Supabase project.
-2. Apply [`supabase/migrations/202611060001_initial_schema.sql`](./supabase/migrations/202611060001_initial_schema.sql), [`supabase/migrations/202611070001_storefront_cms.sql`](./supabase/migrations/202611070001_storefront_cms.sql), and [`supabase/migrations/202611080001_product_catalog_enhancements.sql`](./supabase/migrations/202611080001_product_catalog_enhancements.sql), in order in the Supabase SQL Editor. The migrations create the commerce schema, CMS content and media bucket, and enhanced product gallery/options/inventory support. If earlier migrations were already applied, run only the unapplied migration(s); do not rerun an applied migration.
+2. Apply [`supabase/migrations/202611060001_initial_schema.sql`](./supabase/migrations/202611060001_initial_schema.sql), [`supabase/migrations/202611070001_storefront_cms.sql`](./supabase/migrations/202611070001_storefront_cms.sql), [`supabase/migrations/202611080001_product_catalog_enhancements.sql`](./supabase/migrations/202611080001_product_catalog_enhancements.sql), [`supabase/migrations/202611080002_knockout_rebrand.sql`](./supabase/migrations/202611080002_knockout_rebrand.sql), and [`supabase/migrations/202611080003_checkout_hardening.sql`](./supabase/migrations/202611080003_checkout_hardening.sql), in order in the Supabase SQL Editor. The migrations create the commerce schema, CMS content and media bucket, enhanced product gallery/options/inventory support, update saved storefront branding, and harden checkout with delivery-address storage and idempotent order creation. If earlier migrations were already applied, run only the unapplied migration(s); do not rerun an applied migration.
 3. Configure the two environment variables above in local development and your hosting provider, then redeploy.
 4. Create an Auth user for each staff member in Supabase Authentication. Assign administrator access to the intended account using the Supabase SQL Editor:
 
@@ -33,7 +33,7 @@ Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.loca
 ## Store behavior
 
 - `/shop` displays active products managed in the admin area. Each product has a unique `/shop/[slug]` detail page, with its gallery, sizes, colours, price, and stock status. All product pricing is in PKR.
-- Orders are created atomically in the database with server-side prices, product-name/price snapshots, selected options, and an `unpaid` status. Products with a numeric stock quantity reserve inventory when ordered and release it if the order is cancelled; leave stock blank for made-to-order products. The site does **not** collect payment online or calculate shipping. Staff must confirm the invoice/payment and delivery arrangements with the customer.
+- Checkout validates customer contact details and delivery address, recalculates PKR prices and stock in the database, and creates orders atomically with product-name/price snapshots and selected options. A retry of the same checkout request cannot create or reserve a duplicate order. Products with a numeric stock quantity reserve inventory when ordered and release it if the order is cancelled; leave stock blank for made-to-order products. The site does **not** collect payment, enable Cash on Delivery, apply discounts, or calculate shipping. Staff must confirm the invoice/payment and delivery arrangements with the customer; the checkout subtotal is for items only.
 - `/contact` stores quote requests. Optional JPG, PNG, and WebP designs (up to 4 MB) are kept in private Supabase Storage; staff access them through expiring admin-only links.
 - Storefront collections and published products are read from Supabase; the shop can filter products by collection. CMS page content is public-readable and admin-writable under RLS. Storefront images use the public `storefront-media` bucket and can be uploaded from the admin panel.
 - `/admin` requires a Supabase Auth account whose trusted `app_metadata.role` is `admin`. Row-level security protects products, customers, orders, quote requests, and attachments.

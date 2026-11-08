@@ -19,7 +19,12 @@ export async function POST(request: Request) {
   const name = typeof body.name === "string" ? body.name.trim() : "";
   const email = typeof body.email === "string" ? body.email.trim() : "";
   const phone = typeof body.phone === "string" ? body.phone.trim() : "";
+  const address = typeof body.address === "string" ? body.address.trim() : "";
   const notes = typeof body.notes === "string" ? body.notes.trim() : "";
+  const expectedSubtotal =
+    typeof body.expectedSubtotal === "number" ? body.expectedSubtotal : Number.NaN;
+  const checkoutRequestId =
+    typeof body.checkoutRequestId === "string" ? body.checkoutRequestId : "";
   const items = Array.isArray(body.items) ? body.items : [];
   const validItems = items.every(isOrderItem);
   const itemIds = validItems ? items.map((item) => item.productId) : [];
@@ -32,15 +37,24 @@ export async function POST(request: Request) {
     name.length > 120 ||
     !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ||
     email.length > 254 ||
-    phone.length < 5 ||
-    phone.length > 40 ||
+    !/^\+?[\d\s().-]{7,30}$/.test(phone) ||
+    phone.replace(/\D/g, "").length < 7 ||
+    phone.replace(/\D/g, "").length > 15 ||
+    address.length < 10 ||
+    address.length > 500 ||
     notes.length > 4000 ||
+    !Number.isFinite(expectedSubtotal) ||
+    expectedSubtotal < 0 ||
+    !uuidPattern.test(checkoutRequestId) ||
     items.length < 1 ||
     items.length > 20 ||
     !validItems ||
     new Set(
       validItems
-        ? items.map((item) => `${item.productId}\u0000${item.size}\u0000${item.colour}`)
+        ? items.map(
+            (item) =>
+              `${item.productId}\u0000${item.size ?? ""}\u0000${item.colour ?? ""}`,
+          )
         : [],
     ).size !== itemIds.length
   ) {
@@ -58,11 +72,14 @@ export async function POST(request: Request) {
     p_customer_name: name,
     p_customer_email: email,
     p_customer_phone: phone,
+    p_customer_address: address,
     p_notes: notes,
     p_product_ids: itemIds,
     p_quantities: quantities,
     p_sizes: sizes,
     p_colours: colours,
+    p_expected_subtotal: expectedSubtotal,
+    p_checkout_request_id: checkoutRequestId,
   });
 
   if (error || !data?.[0]) {
@@ -70,14 +87,17 @@ export async function POST(request: Request) {
     const unavailable =
       error?.message.includes("unavailable") ||
       error?.message.includes("insufficient stock") ||
-      error?.message.includes("selected options");
+      error?.message.includes("selected options") ||
+      error?.message.includes("Prices have changed");
     return NextResponse.json(
       {
         error: unavailable
-          ? "One or more products are unavailable. Please refresh your basket."
+          ? error?.message.includes("Prices have changed")
+            ? "A product price changed. Review the refreshed basket total and submit again."
+            : "One or more products are unavailable, out of stock, or have changed options. Please review your basket."
           : "We could not place your order. Please try again shortly.",
       },
-      { status: 503 },
+      { status: unavailable ? 409 : 503 },
     );
   }
 
