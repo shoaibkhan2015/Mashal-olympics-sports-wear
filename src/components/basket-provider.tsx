@@ -24,6 +24,7 @@ const basketKey = "mashal-basket-v1";
 type BasketContextValue = {
   basket: BasketLine[];
   count: number;
+  hydrated: boolean;
   notice: string;
   addToBasket: (
     product: Product,
@@ -131,7 +132,7 @@ export function BasketProvider({ children }: { children: ReactNode }) {
           ? basket.map((line) => (line === existing ? { ...line, quantity: nextQuantity } : line))
           : [...basket, { productId: product.id, quantity, size, colour }],
       );
-      setNotice("Product added to your basket");
+      setNotice("Product added to your cart");
     },
     [basket],
   );
@@ -166,13 +167,14 @@ export function BasketProvider({ children }: { children: ReactNode }) {
     () => ({
       basket,
       count: basket.reduce((sum, item) => sum + item.quantity, 0),
+      hydrated,
       notice,
       addToBasket,
       updateQuantity,
       clearBasket,
       dismissNotice,
     }),
-    [basket, notice, addToBasket, updateQuantity, clearBasket, dismissNotice],
+    [basket, hydrated, notice, addToBasket, updateQuantity, clearBasket, dismissNotice],
   );
 
   return (
@@ -186,11 +188,11 @@ export function BasketProvider({ children }: { children: ReactNode }) {
           <Check className="size-5 shrink-0 text-primary" />
           <span className="flex-1">{notice}</span>
           <Link
-            href="/shop#basket"
+            href="/cart"
             onClick={dismissNotice}
             className="shrink-0 rounded-full bg-primary px-3 py-2 text-xs font-bold text-primary-foreground"
           >
-            View Basket
+            View Cart
           </Link>
           <button type="button" onClick={dismissNotice} aria-label="Dismiss notification">
             <X className="size-4" />

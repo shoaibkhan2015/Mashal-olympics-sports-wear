@@ -63,6 +63,8 @@ begin
     return;
   end if;
 
+  v_currency := 'PKR';
+
   perform p.id
   from public.products p
   where p.id = any(p_product_ids)
