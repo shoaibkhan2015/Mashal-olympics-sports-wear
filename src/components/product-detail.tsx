@@ -7,6 +7,7 @@ import { ProductPrice } from "@/components/product-price";
 import { BasketQuantityControl } from "@/components/basket-quantity-control";
 import { useBasket } from "@/components/basket-provider";
 import type { RelatedProduct } from "@/lib/product-pricing";
+import { getWhatsAppUrl } from "@/lib/whatsapp";
 import type { Product, ProductFaq } from "@/lib/supabase/types";
 
 const colourValues: Record<string, string> = {
@@ -80,8 +81,7 @@ export function ProductDetail({
   const touchStartX = useRef<number | null>(null);
   const swipedUntil = useRef(0);
   const outOfStock = product.stock_quantity === 0;
-  const phoneDigits = whatsappNumber.replace(/\D/g, "");
-  const canContactOnWhatsApp = phoneDigits.length >= 7 && phoneDigits.length <= 15;
+  const canContactOnWhatsApp = Boolean(getWhatsAppUrl(whatsappNumber));
   const selectedVariantQuantity = basket
     .filter(
       (line) =>
@@ -106,7 +106,7 @@ export function ProductDetail({
   const productMessage = (message: string) =>
     `${message}\n\nProduct: ${product.name}\nLink: ${window.location.origin}/shop/${product.slug}`;
   const whatsappHref = (message: string) =>
-    `https://wa.me/${phoneDigits}?text=${encodeURIComponent(message)}`;
+    getWhatsAppUrl(whatsappNumber, message) ?? "";
   const customInquiryHref = whatsappHref(`${faqText}\nProduct: /shop/${product.slug}`);
 
   useEffect(() => {
@@ -595,6 +595,7 @@ export function ProductDetail({
 
       {stickyVisible && (
         <div
+          data-mobile-purchase-bar
           className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 px-4 pt-3 shadow-[0_-8px_24px_rgba(0,0,0,0.3)] backdrop-blur lg:hidden"
           style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
         >

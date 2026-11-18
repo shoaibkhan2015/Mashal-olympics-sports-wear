@@ -44,11 +44,18 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </head>
       <body>
         <BasketProvider>
-          <div className="flex min-h-screen flex-col bg-background text-foreground">
-            <SiteHeader siteContent={siteContent} />
-            <div className="flex-1">{children}</div>
-            <SiteFooter siteContent={siteContent} collections={collections} />
-            <WhatsAppButton number={contentString(siteContent, "whatsapp_number")} />
+          <div data-storefront className="flex min-h-screen flex-col bg-background text-foreground">
+            <div data-storefront-chrome className="contents">
+              <SiteHeader siteContent={siteContent} />
+            </div>
+            <div data-storefront-content className="flex-1">{children}</div>
+            <div data-storefront-chrome className="contents">
+              <SiteFooter siteContent={siteContent} collections={collections} />
+            </div>
+            <WhatsAppButton
+              number={contentString(siteContent, "whatsapp_number")}
+              brandName={contentString(siteContent, "brand_name", "Knockout Sports Wear")}
+            />
           </div>
         </BasketProvider>
       </body>

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getWhatsAppUrl } from "@/lib/whatsapp";
 import { parseDiscountPercentage } from "@/lib/product-pricing";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -47,7 +48,7 @@ export async function createProduct(formData: FormData) {
   const description = String(formData.get("description") ?? "").trim();
   const imageUrls = parseProductImages(formData.get("image_urls"));
   const discountPercentage = parseDiscountPercentage(formData.get("discount_percentage"));
-  if (discountPercentage === null) redirect("/admin?error=discount#products");
+  if (discountPercentage === null) redirect("/admin?section=products&error=discount&new=1");
   const rawPrice = String(formData.get("price") ?? "").trim();
   const sizes = parseProductOptions(formData.get("available_sizes"), 40);
   const colours = parseProductOptions(formData.get("available_colours"), 60);
@@ -56,6 +57,7 @@ export async function createProduct(formData: FormData) {
   const isActive = formData.get("is_active") === "on";
 
   if (
+    !/^[0-9a-f-]{36}$/i.test(categoryId) ||
     name.length < 1 ||
     name.length > 160 ||
     description.length > 4000 ||
@@ -65,22 +67,22 @@ export async function createProduct(formData: FormData) {
     stockQuantity === undefined ||
     !productDetails
   ) {
-    redirect("/admin?error=product");
+    redirect("/admin?section=products&error=product&new=1");
   }
   if (
     imageUrls.some((url) => !isSafeImageUrl(url)) ||
     productDetails.fabric_image_urls.some((url) => !isSafeImageUrl(url))
   ) {
-    redirect("/admin?error=image");
+    redirect("/admin?section=products&error=image&new=1");
   }
 
   const price = rawPrice ? Number(rawPrice) : null;
   if ((rawPrice && (!Number.isFinite(price) || price! < 0)) || (isActive && price === null)) {
-    redirect("/admin?error=price");
+    redirect("/admin?section=products&error=price&new=1");
   }
 
   const slugBase = slugify(name);
-  if (!slugBase) redirect("/admin?error=product");
+  if (!slugBase) redirect("/admin?section=products&error=product&new=1");
   const productData = {
     category_id: categoryId,
     slug: `${slugBase}-${crypto.randomUUID().slice(0, 8)}`,
@@ -100,14 +102,14 @@ export async function createProduct(formData: FormData) {
   if (isProductDetailsSchemaError(error) && !hasProductDetails(productDetails)) {
     ({ error } = await supabase.from("products").insert(productData));
   } else if (isProductDetailsSchemaError(error)) {
-    redirect("/admin?error=product-details-schema");
+    redirect("/admin?section=products&error=product-details-schema&new=1");
   }
   if (error) {
     console.error("Could not create product:", error.message);
-    redirect("/admin?error=product-save");
+    redirect("/admin?section=products&error=product-save&new=1");
   }
   revalidateStorefront();
-  redirect("/admin?notice=product-created");
+  redirect("/admin?section=products&notice=product-created");
 }
 
 export async function createCategory(formData: FormData) {
@@ -120,9 +122,9 @@ export async function createCategory(formData: FormData) {
   const slugBase = slugify(name);
 
   if (!name || name.length > 120 || tagline.length > 300 || !slugBase || position === null) {
-    redirect("/admin?error=collection");
+    redirect("/admin?section=collections&error=collection&new=1");
   }
-  if (imageUrl && !isSafeImageUrl(imageUrl)) redirect("/admin?error=image");
+  if (imageUrl && !isSafeImageUrl(imageUrl)) redirect("/admin?section=collections&error=image&new=1");
 
   const { error } = await supabase.from("categories").insert({
     name,
@@ -134,10 +136,10 @@ export async function createCategory(formData: FormData) {
   });
   if (error) {
     console.error("Could not create collection:", error.message);
-    redirect("/admin?error=collection-save");
+    redirect("/admin?section=collections&error=collection-save&new=1");
   }
   revalidateStorefront();
-  redirect("/admin?notice=collection-created");
+  redirect("/admin?section=collections&notice=collection-created");
 }
 
 export async function updateCategory(formData: FormData) {
@@ -155,9 +157,9 @@ export async function updateCategory(formData: FormData) {
     tagline.length > 300 ||
     position === null
   ) {
-    redirect("/admin?error=collection");
+    redirect(`/admin?section=collections&error=collection&editCollection=${encodeURIComponent(id)}`);
   }
-  if (imageUrl && !isSafeImageUrl(imageUrl)) redirect("/admin?error=image");
+  if (imageUrl && !isSafeImageUrl(imageUrl)) redirect(`/admin?section=collections&error=image&editCollection=${encodeURIComponent(id)}`);
 
   const { error } = await supabase
     .from("categories")
@@ -171,36 +173,36 @@ export async function updateCategory(formData: FormData) {
     .eq("id", id);
   if (error) {
     console.error("Could not update collection:", error.message);
-    redirect("/admin?error=collection-save");
+    redirect(`/admin?section=collections&error=collection-save&editCollection=${encodeURIComponent(id)}`);
   }
   revalidateStorefront();
-  redirect("/admin?notice=collection-updated");
+  redirect("/admin?section=collections&notice=collection-updated");
 }
 
 export async function deleteCategory(formData: FormData) {
   const supabase = await getAdminClient();
   const id = String(formData.get("id") ?? "");
-  if (!/^[0-9a-f-]{36}$/i.test(id)) redirect("/admin?error=collection");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) redirect(`/admin?section=collections&error=collection&editCollection=${encodeURIComponent(id)}`);
   const { error } = await supabase.from("categories").delete().eq("id", id);
   if (error) {
     console.error("Could not delete collection:", error.message);
-    redirect("/admin?error=collection-delete");
+    redirect(`/admin?section=collections&error=collection-delete&editCollection=${encodeURIComponent(id)}`);
   }
   revalidateStorefront();
-  redirect("/admin?notice=collection-deleted");
+  redirect("/admin?section=collections&notice=collection-deleted");
 }
 
 export async function deleteProduct(formData: FormData) {
   const supabase = await getAdminClient();
   const id = String(formData.get("id") ?? "");
-  if (!/^[0-9a-f-]{36}$/i.test(id)) redirect("/admin?error=product");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) redirect("/admin?section=products&error=product");
   const { error } = await supabase.from("products").delete().eq("id", id);
   if (error) {
     console.error("Could not delete product:", error.message);
-    redirect("/admin?error=product-delete");
+    redirect("/admin?section=products&error=product-delete");
   }
   revalidateStorefront();
-  redirect("/admin?notice=product-deleted");
+  redirect("/admin?section=products&notice=product-deleted");
 }
 
 export async function updateProduct(formData: FormData) {
@@ -211,7 +213,7 @@ export async function updateProduct(formData: FormData) {
   const description = String(formData.get("description") ?? "").trim();
   const imageUrls = parseProductImages(formData.get("image_urls"));
   const discountPercentage = parseDiscountPercentage(formData.get("discount_percentage"));
-  if (discountPercentage === null) redirect("/admin?error=discount#products");
+  if (discountPercentage === null) redirect(`/admin?section=products&error=discount&expandedProduct=${encodeURIComponent(id)}`);
   const rawPrice = String(formData.get("price") ?? "").trim();
   const sizes = parseProductOptions(formData.get("available_sizes"), 40);
   const colours = parseProductOptions(formData.get("available_colours"), 60);
@@ -231,19 +233,19 @@ export async function updateProduct(formData: FormData) {
     stockQuantity === undefined ||
     !productDetails
   ) {
-    redirect("/admin?error=product");
+    redirect(`/admin?section=products&error=product&expandedProduct=${encodeURIComponent(id)}`);
   }
   if (
     imageUrls.some((url) => !isSafeImageUrl(url)) ||
     productDetails.fabric_image_urls.some((url) => !isSafeImageUrl(url))
   ) {
-    redirect("/admin?error=image");
+    redirect(`/admin?section=products&error=image&expandedProduct=${encodeURIComponent(id)}`);
   }
   if (
     (rawPrice && (!Number.isFinite(price) || price! < 0)) ||
     (formData.get("is_active") === "on" && price === null)
   ) {
-    redirect("/admin?error=price");
+    redirect(`/admin?section=products&error=price&expandedProduct=${encodeURIComponent(id)}`);
   }
   const productData = {
     name,
@@ -269,11 +271,11 @@ export async function updateProduct(formData: FormData) {
   if (isProductDetailsSchemaError(error) && !hasProductDetails(productDetails)) {
     ({ error } = await supabase.from("products").update(productData).eq("id", id));
   } else if (isProductDetailsSchemaError(error)) {
-    redirect("/admin?error=product-details-schema");
+    redirect(`/admin?section=products&error=product-details-schema&expandedProduct=${encodeURIComponent(id)}`);
   }
   if (error) {
     console.error("Could not update product:", error.message);
-    redirect("/admin?error=product-save");
+    redirect(`/admin?section=products&error=product-save&expandedProduct=${encodeURIComponent(id)}`);
   }
   revalidateStorefront();
   const requestedPageSize = Number(formData.get("list_page_size"));
@@ -283,7 +285,7 @@ export async function updateProduct(formData: FormData) {
       : 10;
   const expanded = formData.get("list_expanded") === "1";
   redirect(
-    `/admin?notice=product-updated&expandedProduct=${encodeURIComponent(id)}&productPageSize=${pageSize}&productsExpanded=${expanded ? "1" : "0"}#products`,
+    `/admin?section=products&notice=product-updated&expandedProduct=${encodeURIComponent(id)}&productPageSize=${pageSize}&productsExpanded=${expanded ? "1" : "0"}`,
   );
 }
 
@@ -404,7 +406,7 @@ export async function saveStorefrontContent(formData: FormData) {
       "side_button",
     ],
   };
-  if (!(key in fields)) redirect("/admin?error=content");
+  if (!(key in fields)) redirect("/admin?section=pages&error=content");
 
   const content: Record<
     string,
@@ -415,32 +417,26 @@ export async function saveStorefrontContent(formData: FormData) {
   > = {};
   for (const field of fields[key]) {
     const value = String(formData.get(field) ?? "").trim();
-    if (value.length > 5000) redirect("/admin?error=content");
+    if (value.length > 5000) redirect("/admin?section=pages&error=content");
     if (
       ["hero_image", "banner_image", "logo_url"].includes(field) &&
       value &&
       !isSafeImageUrl(value)
     ) {
-      redirect("/admin?error=image");
+      redirect("/admin?section=pages&error=image");
     }
     if (
       (field === "instagram_url" && value && !isSocialProfileUrl(value, "instagram.com")) ||
       (field === "facebook_url" && value && !isSocialProfileUrl(value, "facebook.com")) ||
       (field === "tiktok_url" && value && !isSocialProfileUrl(value, "tiktok.com"))
     ) {
-      redirect("/admin?error=content-url");
+      redirect("/admin?section=pages&error=content-url");
     }
-    if (
-      field === "whatsapp_number" &&
-      value &&
-      (!/^\+?[\d\s().-]+$/.test(value) ||
-        value.replace(/\D/g, "").length < 7 ||
-        value.replace(/\D/g, "").length > 15)
-    ) {
-      redirect("/admin?error=whatsapp");
+    if (field === "whatsapp_number" && value && !getWhatsAppUrl(value)) {
+      redirect("/admin?section=pages&error=whatsapp");
     }
     if (field === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-      redirect("/admin?error=content");
+      redirect("/admin?section=pages&error=content");
     }
     content[field] = value;
   }
@@ -465,10 +461,10 @@ export async function saveStorefrontContent(formData: FormData) {
     .upsert({ content_key: key, content }, { onConflict: "content_key" });
   if (error) {
     console.error("Could not save storefront content:", error.message);
-    redirect("/admin?error=content-save");
+    redirect("/admin?section=pages&error=content-save");
   }
   revalidateStorefront();
-  redirect(`/admin?notice=content-updated#${key}`);
+  redirect(`/admin?section=pages&notice=content-updated&editPage=${key}`);
 }
 
 export async function updateOrder(formData: FormData) {
@@ -481,7 +477,7 @@ export async function updateOrder(formData: FormData) {
     !["pending", "confirmed", "in_production", "completed", "cancelled"].includes(status) ||
     !["unpaid", "paid", "refunded"].includes(paymentStatus)
   ) {
-    redirect("/admin?error=order");
+    redirect("/admin?section=orders&error=order");
   }
   const { error } = await supabase
     .from("orders")
@@ -489,10 +485,10 @@ export async function updateOrder(formData: FormData) {
     .eq("id", id);
   if (error) {
     console.error("Could not update order:", error.message);
-    redirect("/admin?error=order-save");
+    redirect("/admin?section=orders&error=order-save");
   }
   revalidatePath("/admin");
-  redirect("/admin?notice=order-updated");
+  redirect("/admin?section=orders&notice=order-updated");
 }
 
 export async function updateQuote(formData: FormData) {
@@ -503,15 +499,15 @@ export async function updateQuote(formData: FormData) {
     !/^[0-9a-f-]{36}$/i.test(id) ||
     !["new", "contacted", "quoted", "accepted", "closed"].includes(status)
   ) {
-    redirect("/admin?error=quote");
+    redirect("/admin?section=quotes&error=quote");
   }
   const { error } = await supabase.from("quote_requests").update({ status }).eq("id", id);
   if (error) {
     console.error("Could not update quote request:", error.message);
-    redirect("/admin?error=quote-save");
+    redirect("/admin?section=quotes&error=quote-save");
   }
   revalidatePath("/admin");
-  redirect("/admin?notice=quote-updated");
+  redirect("/admin?section=quotes&notice=quote-updated");
 }
 
 function isSafeImageUrl(value: string) {

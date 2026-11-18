@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Facebook, Instagram, Mail, Phone } from "lucide-react";
+import { getWhatsAppUrl } from "@/lib/whatsapp";
 import { contentBoolean, contentString, type StorefrontCategory } from "@/lib/cms";
 
 export function SiteFooter({
@@ -16,11 +17,7 @@ export function SiteFooter({
   const instagramUrl = contentString(siteContent, "instagram_url");
   const facebookUrl = contentString(siteContent, "facebook_url");
   const tiktokUrl = contentString(siteContent, "tiktok_url");
-  const whatsappNumber = contentString(siteContent, "whatsapp_number").replace(/\D/g, "");
-  const whatsappUrl =
-    whatsappNumber.length >= 7 && whatsappNumber.length <= 15
-      ? `https://wa.me/${whatsappNumber}`
-      : "";
+  const whatsappUrl = getWhatsAppUrl(contentString(siteContent, "whatsapp_number"));
   const socialLinkClass =
     "grid size-10 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary";
   return (

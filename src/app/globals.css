@@ -542,3 +542,24 @@ body {
     0 10px 40px -15px oklch(0 0 0 / 0.7),
     inset 0 1px 0 oklch(1 0 0 / 0.08);
 }
+
+/* Keep cart and checkout controls clear of the floating chat. */
+[data-storefront]:has([data-whatsapp-button][data-commerce]) [data-storefront-content] {
+  padding-inline-end: 4.5rem;
+}
+
+@media (min-width: 640px) {
+  [data-storefront]:has([data-whatsapp-button][data-commerce]) [data-storefront-content] {
+    padding-inline-end: 5rem;
+  }
+}
+
+@media (min-width: 90rem) {
+  [data-storefront]:has([data-whatsapp-button][data-commerce]) [data-storefront-content] {
+    padding-inline-end: 0;
+  }
+}
+
+[data-storefront]:has([data-whatsapp-button]) [data-mobile-purchase-bar] {
+  padding-inline-end: 5rem;
+}
