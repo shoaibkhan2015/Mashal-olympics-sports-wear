@@ -12,7 +12,16 @@ export type Product = {
   available_colours: string[];
   stock_quantity: number | null;
   is_active: boolean;
+  fabric_details: string;
+  fit_details: string;
+  care_instructions: string;
+  customization_options: string;
+  size_guide: string;
+  fabric_image_urls: string[];
+  product_faqs: ProductFaq[];
 };
+
+export type ProductFaq = { question: string; answer: string };
 
 export type CategoryRecord = {
   id: string;

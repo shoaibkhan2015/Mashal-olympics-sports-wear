@@ -3,6 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  emptyProductDetails,
+  hasProductDetails,
+  isProductDetailsSchemaError,
+} from "@/lib/supabase/product-details";
 
 async function getAdminClient() {
   const supabase = await createSupabaseServerClient();
@@ -44,6 +49,7 @@ export async function createProduct(formData: FormData) {
   const sizes = parseProductOptions(formData.get("available_sizes"), 40);
   const colours = parseProductOptions(formData.get("available_colours"), 60);
   const stockQuantity = parseStockQuantity(formData.get("stock_quantity"));
+  const productDetails = parseProductDetailFields(formData);
   const isActive = formData.get("is_active") === "on";
 
   if (
@@ -53,11 +59,17 @@ export async function createProduct(formData: FormData) {
     !imageUrls ||
     !sizes ||
     !colours ||
-    stockQuantity === undefined
+    stockQuantity === undefined ||
+    !productDetails
   ) {
     redirect("/admin?error=product");
   }
-  if (imageUrls.some((url) => !isSafeImageUrl(url))) redirect("/admin?error=image");
+  if (
+    imageUrls.some((url) => !isSafeImageUrl(url)) ||
+    productDetails.fabric_image_urls.some((url) => !isSafeImageUrl(url))
+  ) {
+    redirect("/admin?error=image");
+  }
 
   const price = rawPrice ? Number(rawPrice) : null;
   if ((rawPrice && (!Number.isFinite(price) || price! < 0)) || (isActive && price === null)) {
@@ -66,7 +78,7 @@ export async function createProduct(formData: FormData) {
 
   const slugBase = slugify(name);
   if (!slugBase) redirect("/admin?error=product");
-  const { error } = await supabase.from("products").insert({
+  const productData = {
     category_id: categoryId,
     slug: `${slugBase}-${crypto.randomUUID().slice(0, 8)}`,
     name,
@@ -79,7 +91,13 @@ export async function createProduct(formData: FormData) {
     available_colours: colours,
     stock_quantity: stockQuantity,
     is_active: isActive,
-  });
+  };
+  let { error } = await supabase.from("products").insert({ ...productData, ...productDetails });
+  if (isProductDetailsSchemaError(error) && !hasProductDetails(productDetails)) {
+    ({ error } = await supabase.from("products").insert(productData));
+  } else if (isProductDetailsSchemaError(error)) {
+    redirect("/admin?error=product-details-schema");
+  }
   if (error) {
     console.error("Could not create product:", error.message);
     redirect("/admin?error=product-save");
@@ -193,6 +211,7 @@ export async function updateProduct(formData: FormData) {
   const sizes = parseProductOptions(formData.get("available_sizes"), 40);
   const colours = parseProductOptions(formData.get("available_colours"), 60);
   const stockQuantity = parseStockQuantity(formData.get("stock_quantity"));
+  const productDetails = parseProductDetailFields(formData);
   const price = rawPrice ? Number(rawPrice) : null;
 
   if (
@@ -204,33 +223,48 @@ export async function updateProduct(formData: FormData) {
     !imageUrls ||
     !sizes ||
     !colours ||
-    stockQuantity === undefined
+    stockQuantity === undefined ||
+    !productDetails
   ) {
     redirect("/admin?error=product");
   }
-  if (imageUrls.some((url) => !isSafeImageUrl(url))) redirect("/admin?error=image");
+  if (
+    imageUrls.some((url) => !isSafeImageUrl(url)) ||
+    productDetails.fabric_image_urls.some((url) => !isSafeImageUrl(url))
+  ) {
+    redirect("/admin?error=image");
+  }
   if (
     (rawPrice && (!Number.isFinite(price) || price! < 0)) ||
     (formData.get("is_active") === "on" && price === null)
   ) {
     redirect("/admin?error=price");
   }
-  const { error } = await supabase
+  const productData = {
+    name,
+    category_id: categoryId,
+    description,
+    image_url: imageUrls[0] ?? "",
+    image_urls: imageUrls,
+    price,
+    currency: rawPrice ? "PKR" : null,
+    available_sizes: sizes,
+    available_colours: colours,
+    stock_quantity: stockQuantity,
+    is_active: formData.get("is_active") === "on",
+  };
+  let { error } = await supabase
     .from("products")
     .update({
-      name,
-      category_id: categoryId,
-      description,
-      image_url: imageUrls[0] ?? "",
-      image_urls: imageUrls,
-      price,
-      currency: rawPrice ? "PKR" : null,
-      available_sizes: sizes,
-      available_colours: colours,
-      stock_quantity: stockQuantity,
-      is_active: formData.get("is_active") === "on",
+      ...productData,
+      ...productDetails,
     })
     .eq("id", id);
+  if (isProductDetailsSchemaError(error) && !hasProductDetails(productDetails)) {
+    ({ error } = await supabase.from("products").update(productData).eq("id", id));
+  } else if (isProductDetailsSchemaError(error)) {
+    redirect("/admin?error=product-details-schema");
+  }
   if (error) {
     console.error("Could not update product:", error.message);
     redirect("/admin?error=product-save");
@@ -516,6 +550,76 @@ function parseProductOptions(value: FormDataEntryValue | null, maxLength: number
   return [...new Set(options)];
 }
 
+function parseProductDetailFields(formData: FormData) {
+  const names = [
+    "fabric_details",
+    "fit_details",
+    "care_instructions",
+    "customization_options",
+    "size_guide",
+    "fabric_image_urls",
+    "product_faqs",
+  ];
+  if (names.every((name) => formData.get(name) === null)) {
+    return { ...emptyProductDetails, fabric_image_urls: [], product_faqs: [] };
+  }
+
+  const fabricDetails = readProductText(formData.get("fabric_details"), 3000);
+  const fitDetails = readProductText(formData.get("fit_details"), 2000);
+  const careInstructions = readProductText(formData.get("care_instructions"), 3000);
+  const customizationOptions = readProductText(formData.get("customization_options"), 3000);
+  const sizeGuide = readProductText(formData.get("size_guide"), 4000);
+  const fabricImageUrls = parseProductImages(formData.get("fabric_image_urls"));
+  const productFaqs = parseProductFaqs(formData.get("product_faqs"));
+  if (
+    fabricDetails === null ||
+    fitDetails === null ||
+    careInstructions === null ||
+    customizationOptions === null ||
+    sizeGuide === null ||
+    !fabricImageUrls ||
+    !productFaqs
+  ) {
+    return null;
+  }
+  return {
+    fabric_details: fabricDetails,
+    fit_details: fitDetails,
+    care_instructions: careInstructions,
+    customization_options: customizationOptions,
+    size_guide: sizeGuide,
+    fabric_image_urls: fabricImageUrls,
+    product_faqs: productFaqs,
+  };
+}
+
+function readProductText(value: FormDataEntryValue | null, maxLength: number) {
+  if (typeof value !== "string") return null;
+  const text = value.trim();
+  return text.length <= maxLength ? text : null;
+}
+
+function parseProductFaqs(value: FormDataEntryValue | null) {
+  if (typeof value !== "string" || value.length > 12000) return null;
+  const entries = value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const separator = line.indexOf("|");
+      if (separator < 1) return null;
+      const question = line.slice(0, separator).trim();
+      const answer = line.slice(separator + 1).trim();
+      return question.length > 0 &&
+        question.length <= 300 &&
+        answer.length > 0 &&
+        answer.length <= 1500
+        ? { question, answer }
+        : null;
+    });
+  return entries.length <= 10 && entries.every((entry) => entry !== null) ? entries : null;
+}
+
 function parseStockQuantity(value: FormDataEntryValue | null): number | null | undefined {
   if (value === null || String(value).trim() === "") return null;
   const quantity = Number(value);
@@ -526,8 +630,7 @@ function isSocialProfileUrl(value: string, domain: string) {
   try {
     const url = new URL(value);
     return (
-      url.protocol === "https:" &&
-      (url.hostname === domain || url.hostname.endsWith(`.${domain}`))
+      url.protocol === "https:" && (url.hostname === domain || url.hostname.endsWith(`.${domain}`))
     );
   } catch {
     return false;

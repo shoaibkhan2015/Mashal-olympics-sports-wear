@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronDown, LoaderCircle } from "lucide-react";
 import { ConfirmDeleteButton } from "@/components/admin/confirm-delete-button";
 import { ProductImagePicker } from "@/components/admin/product-image-picker";
+import { ProductDetailFields } from "@/components/admin/product-detail-fields";
 import { deleteProduct, updateProduct } from "@/app/admin/actions";
 import type { Product } from "@/lib/supabase/types";
 
@@ -21,12 +22,14 @@ export function ProductAdminList({
   categories,
   editedProduct,
   initiallyExpanded,
+  productDetailsAvailable,
 }: {
   initialProducts: Product[];
   total: number;
   categories: AdminCategory[];
   editedProduct: Product | null;
   initiallyExpanded: boolean;
+  productDetailsAvailable: boolean;
 }) {
   const [products, setProducts] = useState(() => {
     const combined = editedProduct
@@ -126,6 +129,13 @@ export function ProductAdminList({
                     : []
               }
             />
+            {productDetailsAvailable && (
+              <ProductImagePicker
+                name="fabric_image_urls"
+                label="Fabric and detail close-ups (optional)"
+                initialUrls={product.fabric_image_urls ?? []}
+              />
+            )}
             <label className="grid gap-2 text-sm">
               Available sizes (comma-separated)
               <input
@@ -165,6 +175,7 @@ export function ProductAdminList({
                 className={inputClass}
               />
             </label>
+            {productDetailsAvailable && <ProductDetailFields product={product} />}
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" name="is_active" defaultChecked={product.is_active} />{" "}
               Published

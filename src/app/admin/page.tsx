@@ -6,10 +6,17 @@ import { isMissingCmsSchemaError } from "@/lib/cms";
 import type { Order, Product } from "@/lib/supabase/types";
 import { MediaPicker } from "@/components/admin/media-picker";
 import { ProductImagePicker } from "@/components/admin/product-image-picker";
+import { ProductDetailFields } from "@/components/admin/product-detail-fields";
 import { ConfirmDeleteButton } from "@/components/admin/confirm-delete-button";
 import { ProductAdminList } from "@/components/admin/product-admin-list";
 import { CollapsibleCollection } from "@/components/admin/collapsible-collection";
 import { PasswordField } from "@/components/admin/password-field";
+import {
+  isProductDetailsSchemaError,
+  legacyProductColumns,
+  productColumns,
+  withProductDetails,
+} from "@/lib/supabase/product-details";
 import {
   createCategory,
   createProduct,
@@ -29,6 +36,8 @@ const errorMessages: Record<string, string> = {
   credentials: "Enter your email and password.",
   signout: "Could not sign out. Please try again.",
   product: "Enter a valid product name and description.",
+  "product-details-schema":
+    "Apply the product details database migration before saving optional PDP content.",
   image: "Use an image URL beginning with http://, https://, or a single /.",
   price: "Active products need a non-negative PKR price.",
   "product-save": "Product could not be saved. Check the category and slug, then try again.",
@@ -128,7 +137,7 @@ export default async function AdminPage({
 
   const [
     { data: categories, error: categoriesError },
-    { data: rawProducts, error: productsError, count: productCount },
+    productQuery,
     { data: rawOrders, error: ordersError },
     { data: quotes, error: quotesError },
     { data: contentRows, error: contentError },
@@ -137,14 +146,7 @@ export default async function AdminPage({
       .from("categories")
       .select("id, slug, name, tagline, image_url, is_active, position")
       .order("position"),
-    supabase
-      .from("products")
-      .select(
-        "id, category_id, slug, name, description, image_url, image_urls, price, currency, available_sizes, available_colours, stock_quantity, is_active",
-        { count: "exact" },
-      )
-      .order("created_at", { ascending: false })
-      .range(0, initialProductLimit - 1),
+    loadAdminProducts(supabase, initialProductLimit),
     supabase
       .from("orders")
       .select(
@@ -164,6 +166,12 @@ export default async function AdminPage({
       .select("content_key, content")
       .in("content_key", ["home", "about", "site", "shop", "contact"]),
   ]);
+  const {
+    data: rawProducts,
+    error: productsError,
+    count: productCount,
+    detailsAvailable: productDetailsAvailable,
+  } = productQuery;
   const cmsMigrationMissing = contentError ? isMissingCmsSchemaError(contentError) : false;
   if (
     categoriesError ||
@@ -181,19 +189,32 @@ export default async function AdminPage({
     throw new Error(`Could not load the admin dashboard: ${message}`);
   }
   const products = (rawProducts ?? []) as Product[];
-  const editedProductResult = params.expandedProduct
-    ? await supabase
+  let editedProduct: Product | null = null;
+  if (params.expandedProduct) {
+    const editedProductResult = await supabase
         .from("products")
-        .select(
-          "id, category_id, slug, name, description, image_url, image_urls, price, currency, available_sizes, available_colours, stock_quantity, is_active",
-        )
+        .select(productColumns)
         .eq("id", params.expandedProduct)
-        .maybeSingle()
-    : null;
-  if (editedProductResult?.error) {
-    throw new Error(`Could not restore the edited product: ${editedProductResult.error.message}`);
+        .maybeSingle();
+    if (isProductDetailsSchemaError(editedProductResult.error)) {
+      const legacy = await supabase
+        .from("products")
+        .select(legacyProductColumns)
+        .eq("id", params.expandedProduct)
+        .maybeSingle();
+      if (legacy.error) {
+        throw new Error(`Could not restore the edited product: ${legacy.error.message}`);
+      }
+      editedProduct = legacy.data ? (withProductDetails(legacy.data) as Product) : null;
+    } else {
+      if (editedProductResult.error) {
+        throw new Error(
+          `Could not restore the edited product: ${editedProductResult.error.message}`,
+        );
+      }
+      editedProduct = editedProductResult.data as Product | null;
+    }
   }
-  const editedProduct = editedProductResult?.data ? (editedProductResult.data as Product) : null;
   const allCategories = categories ?? [];
   const content = Object.fromEntries(
     (contentRows ?? []).map((row) => [
@@ -342,6 +363,12 @@ export default async function AdminPage({
         <h2 className="font-display text-3xl uppercase">
           Products ({productCount ?? products.length})
         </h2>
+        {!productDetailsAvailable && (
+          <p className="mt-4 rounded-xl border border-primary/40 bg-card p-4 text-sm text-muted-foreground">
+            Apply the product details database migration to edit and publish the optional PDP
+            content fields. Existing product editing remains available until then.
+          </p>
+        )}
         <form
           action={createProduct}
           className="mt-5 grid gap-4 rounded-2xl border border-border bg-card p-6 sm:grid-cols-2"
@@ -367,6 +394,12 @@ export default async function AdminPage({
             <input name="price" type="number" min="0" step="0.01" className={inputClass} />
           </label>
           <ProductImagePicker />
+          {productDetailsAvailable && (
+            <ProductImagePicker
+              name="fabric_image_urls"
+              label="Fabric and detail close-ups (optional)"
+            />
+          )}
           <label className="grid gap-2 text-sm">
             Available sizes (comma-separated)
             <input
@@ -393,6 +426,7 @@ export default async function AdminPage({
             Description
             <textarea name="description" rows={3} maxLength={4000} className={inputClass} />
           </label>
+          {productDetailsAvailable && <ProductDetailFields />}
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="is_active" /> Publish (requires a price)
           </label>
@@ -404,6 +438,7 @@ export default async function AdminPage({
           categories={allCategories}
           editedProduct={editedProduct}
           initiallyExpanded={productsExpanded}
+          productDetailsAvailable={productDetailsAvailable}
         />
       </section>
 
@@ -580,6 +615,30 @@ export default async function AdminPage({
       </Link>
     </AdminShell>
   );
+}
+
+async function loadAdminProducts(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  limit: number,
+) {
+  const result = await supabase
+    .from("products")
+    .select(productColumns, { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(0, limit - 1);
+  if (!isProductDetailsSchemaError(result.error)) {
+    return { ...result, detailsAvailable: true };
+  }
+  const legacy = await supabase
+    .from("products")
+    .select(legacyProductColumns, { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(0, limit - 1);
+  return {
+    ...legacy,
+    data: legacy.data?.map(withProductDetails),
+    detailsAvailable: false,
+  };
 }
 
 function AdminShell({ children }: { children: React.ReactNode }) {

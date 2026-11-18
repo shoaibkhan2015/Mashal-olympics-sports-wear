@@ -5,7 +5,17 @@ import { createBrowserClient } from "@supabase/ssr";
 import { ChevronDown, ChevronUp, Star, Trash2 } from "lucide-react";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 
-export function ProductImagePicker({ initialUrls = [] }: { initialUrls?: string[] }) {
+export function ProductImagePicker({
+  initialUrls = [],
+  name = "image_urls",
+  label = "Product images (first image is the main image)",
+  showMainImageField = name === "image_urls",
+}: {
+  initialUrls?: string[];
+  name?: string;
+  label?: string;
+  showMainImageField?: boolean;
+}) {
   const [urls, setUrls] = useState(initialUrls);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -76,9 +86,9 @@ export function ProductImagePicker({ initialUrls = [] }: { initialUrls?: string[
 
   return (
     <div className="grid gap-2 text-sm sm:col-span-2 lg:col-span-3">
-      <span>Product images (first image is the main image)</span>
-      <input type="hidden" name="image_urls" value={JSON.stringify(urls)} />
-      <input type="hidden" name="image_url" value={urls[0] ?? ""} />
+      <span>{label}</span>
+      <input type="hidden" name={name} value={JSON.stringify(urls)} />
+      {showMainImageField && <input type="hidden" name="image_url" value={urls[0] ?? ""} />}
       <input
         type="file"
         accept="image/jpeg,image/png,image/webp"

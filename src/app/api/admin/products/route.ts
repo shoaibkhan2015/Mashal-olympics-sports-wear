@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-
-const productColumns =
-  "id, category_id, slug, name, description, image_url, image_urls, price, currency, available_sizes, available_colours, stock_quantity, is_active";
+import {
+  isProductDetailsSchemaError,
+  legacyProductColumns,
+  productColumns,
+  withProductDetails,
+} from "@/lib/supabase/product-details";
 
 export async function GET(request: Request) {
   const supabase = await createSupabaseServerClient();
@@ -22,6 +25,20 @@ export async function GET(request: Request) {
       .select(productColumns)
       .eq("id", id)
       .maybeSingle();
+    if (isProductDetailsSchemaError(error)) {
+      const legacy = await supabase
+        .from("products")
+        .select(legacyProductColumns)
+        .eq("id", id)
+        .maybeSingle();
+      if (legacy.error) {
+        console.error("Could not load edited product:", legacy.error.message);
+        return NextResponse.json({ error: "Could not load product." }, { status: 500 });
+      }
+      return NextResponse.json({
+        products: legacy.data ? [withProductDetails(legacy.data)] : [],
+      });
+    }
     if (error) {
       console.error("Could not load edited product:", error.message);
       return NextResponse.json({ error: "Could not load product." }, { status: 500 });
@@ -46,6 +63,21 @@ export async function GET(request: Request) {
     .select(productColumns, { count: "exact" })
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
+  if (isProductDetailsSchemaError(error)) {
+    const legacy = await supabase
+      .from("products")
+      .select(legacyProductColumns, { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (legacy.error) {
+      console.error("Could not load more products:", legacy.error.message);
+      return NextResponse.json({ error: "Could not load more products." }, { status: 500 });
+    }
+    return NextResponse.json({
+      products: (legacy.data ?? []).map(withProductDetails),
+      total: legacy.count ?? 0,
+    });
+  }
   if (error) {
     console.error("Could not load more products:", error.message);
     return NextResponse.json({ error: "Could not load more products." }, { status: 500 });
