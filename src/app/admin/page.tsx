@@ -40,6 +40,7 @@ const errorMessages: Record<string, string> = {
     "Apply the product details database migration before saving optional PDP content.",
   image: "Use an image URL beginning with http://, https://, or a single /.",
   price: "Active products need a non-negative PKR price.",
+  discount: "Enter a discount from 0 to 100 with up to two decimal places.",
   "product-save": "Product could not be saved. Check the category and slug, then try again.",
   "product-delete": "Product could not be deleted.",
   collection: "Enter a valid collection name, tagline, and display order.",
@@ -392,6 +393,17 @@ export default async function AdminPage({
           <label className="grid gap-2 text-sm">
             Price (leave blank for quote-only)
             <input name="price" type="number" min="0" step="0.01" className={inputClass} />
+          </label>
+          <label className="grid gap-2 text-sm">
+            Discount (%)
+            <input
+              name="discount_percentage"
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              className={inputClass}
+            />
           </label>
           <ProductImagePicker />
           {productDetailsAvailable && (

@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, ShoppingBag } from "lucide-react";
 import { useBasket } from "@/components/basket-provider";
 import { BasketQuantityControl } from "@/components/basket-quantity-control";
 import {
+  getBasketLineTotal,
   getBasketQuantityLimit,
   getBasketSubtotal,
   hasUnavailableBasketItem,
@@ -77,8 +78,8 @@ export function CartPage({ products }: { products: Product[] }) {
                         <p className="font-semibold">Unavailable product</p>
                       )}
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {product?.price !== null && product
-                          ? `PKR ${Number(product.price).toFixed(2)} each`
+                        {product && product.effective_price !== null
+                          ? `PKR ${product.effective_price.toFixed(2)} each`
                           : "Price unavailable"}
                       </p>
                       {(size || colour) && (
@@ -107,7 +108,7 @@ export function CartPage({ products }: { products: Product[] }) {
                       Remove
                     </button>
                     <p className="min-w-32 text-right font-semibold tabular-nums">
-                      PKR {((product?.price ?? 0) * quantity || 0).toFixed(2)}
+                      PKR {getBasketLineTotal(product, quantity).toFixed(2)}
                     </p>
                   </div>
                 </li>

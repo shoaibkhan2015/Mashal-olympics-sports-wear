@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { parseDiscountPercentage } from "@/lib/product-pricing";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   emptyProductDetails,
@@ -45,6 +46,8 @@ export async function createProduct(formData: FormData) {
   const categoryId = String(formData.get("category_id") ?? "");
   const description = String(formData.get("description") ?? "").trim();
   const imageUrls = parseProductImages(formData.get("image_urls"));
+  const discountPercentage = parseDiscountPercentage(formData.get("discount_percentage"));
+  if (discountPercentage === null) redirect("/admin?error=discount#products");
   const rawPrice = String(formData.get("price") ?? "").trim();
   const sizes = parseProductOptions(formData.get("available_sizes"), 40);
   const colours = parseProductOptions(formData.get("available_colours"), 60);
@@ -86,6 +89,7 @@ export async function createProduct(formData: FormData) {
     image_url: imageUrls[0] ?? "",
     image_urls: imageUrls,
     price,
+    discount_percentage: discountPercentage,
     currency: rawPrice ? "PKR" : null,
     available_sizes: sizes,
     available_colours: colours,
@@ -102,8 +106,7 @@ export async function createProduct(formData: FormData) {
     console.error("Could not create product:", error.message);
     redirect("/admin?error=product-save");
   }
-  revalidatePath("/shop");
-  revalidatePath("/admin");
+  revalidateStorefront();
   redirect("/admin?notice=product-created");
 }
 
@@ -207,6 +210,8 @@ export async function updateProduct(formData: FormData) {
   const categoryId = String(formData.get("category_id") ?? "");
   const description = String(formData.get("description") ?? "").trim();
   const imageUrls = parseProductImages(formData.get("image_urls"));
+  const discountPercentage = parseDiscountPercentage(formData.get("discount_percentage"));
+  if (discountPercentage === null) redirect("/admin?error=discount#products");
   const rawPrice = String(formData.get("price") ?? "").trim();
   const sizes = parseProductOptions(formData.get("available_sizes"), 40);
   const colours = parseProductOptions(formData.get("available_colours"), 60);
@@ -247,6 +252,7 @@ export async function updateProduct(formData: FormData) {
     image_url: imageUrls[0] ?? "",
     image_urls: imageUrls,
     price,
+    discount_percentage: discountPercentage,
     currency: rawPrice ? "PKR" : null,
     available_sizes: sizes,
     available_colours: colours,
@@ -637,7 +643,7 @@ function isSocialProfileUrl(value: string, domain: string) {
   }
 }
 function revalidateStorefront() {
-  for (const path of ["/", "/shop", "/about", "/contact", "/admin"]) {
+  for (const path of ["/", "/shop", "/about", "/contact", "/admin", "/cart", "/checkout"]) {
     revalidatePath(path);
   }
   revalidatePath("/shop/[slug]", "page");

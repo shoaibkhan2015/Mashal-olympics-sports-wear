@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Check, ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
+import { ProductPrice } from "@/components/product-price";
 import { BasketQuantityControl } from "@/components/basket-quantity-control";
 import { useBasket } from "@/components/basket-provider";
+import type { RelatedProduct } from "@/lib/product-pricing";
 import type { Product, ProductFaq } from "@/lib/supabase/types";
-
-type RelatedProduct = Pick<Product, "id" | "slug" | "name" | "image_url" | "image_urls" | "price">;
 
 const colourValues: Record<string, string> = {
   black: "#111111",
@@ -30,10 +30,6 @@ function getSwatchColour(name: string) {
   const normalised = name.trim().toLowerCase();
   if (colourValues[normalised]) return colourValues[normalised];
   return /^#[0-9a-f]{6}$/i.test(normalised) ? normalised : "#525252";
-}
-
-function formatPrice(price: number) {
-  return `PKR ${Number(price).toFixed(2)}`;
 }
 
 function safeFaqs(faqs: ProductFaq[] | null | undefined): ProductFaq[] {
@@ -311,9 +307,7 @@ export function ProductDetail({
           <h1 className="mt-2 font-display text-4xl uppercase tracking-wide sm:text-5xl">
             {product.name}
           </h1>
-          {product.price !== null && (
-            <p className="mt-3 text-2xl font-bold tabular-nums">{formatPrice(product.price)}</p>
-          )}
+          <ProductPrice product={product} className="mt-3 text-2xl font-bold" />
           {product.description.trim() && (
             <p className="mt-3 line-clamp-4 whitespace-pre-line text-sm leading-6 text-muted-foreground">
               {product.description}
@@ -590,11 +584,7 @@ export function ProductDetail({
                   </div>
                   <div className="p-4">
                     <h3 className="font-semibold">{related.name}</h3>
-                    {related.price !== null && (
-                      <p className="mt-1 text-sm text-muted-foreground tabular-nums">
-                        {formatPrice(related.price)}
-                      </p>
-                    )}
+                    <ProductPrice product={related} className="mt-1 text-sm font-semibold" />
                   </div>
                 </Link>
               );
@@ -611,9 +601,7 @@ export function ProductDetail({
           <div className="mx-auto flex max-w-7xl items-center gap-3">
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold">{product.name}</p>
-              {product.price !== null && (
-                <p className="text-sm font-bold tabular-nums">{formatPrice(product.price)}</p>
-              )}
+              <ProductPrice product={product} className="text-sm font-bold" />
             </div>
             <button
               type="button"

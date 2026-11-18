@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Flame } from "lucide-react";
 import { Reveal } from "@/components/reveal";
 import { Storefront } from "@/components/storefront";
+import { legacyProductColumns } from "@/lib/supabase/product-details";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createPublicSupabaseClient } from "@/lib/supabase/public";
 import type { Product } from "@/lib/supabase/types";
@@ -36,9 +37,7 @@ export default async function ShopPage({
     const supabase = createPublicSupabaseClient();
     const { data, error } = await supabase
       .from("products")
-      .select(
-        "id, category_id, slug, name, description, image_url, image_urls, price, currency, available_sizes, available_colours, stock_quantity, is_active",
-      )
+      .select(legacyProductColumns)
       .eq("is_active", true)
       .in(
         "category_id",

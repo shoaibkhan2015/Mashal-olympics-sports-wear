@@ -4,7 +4,7 @@ export const productDetailsColumns =
   "fabric_details, fit_details, care_instructions, customization_options, size_guide, fabric_image_urls, product_faqs";
 
 export const legacyProductColumns =
-  "id, category_id, slug, name, description, image_url, image_urls, price, currency, available_sizes, available_colours, stock_quantity, is_active";
+  "id, category_id, slug, name, description, image_url, image_urls, price, discount_percentage, effective_price, currency, available_sizes, available_colours, stock_quantity, is_active";
 
 export const productColumns = `${legacyProductColumns}, ${productDetailsColumns}`;
 

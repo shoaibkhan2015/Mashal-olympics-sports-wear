@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ProductPrice } from "@/components/product-price";
 import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
 import type { StorefrontCategory } from "@/lib/cms";
@@ -164,7 +165,7 @@ export function Storefront({
               <p className="mt-2 min-h-10 text-sm text-muted-foreground">{product.description}</p>
               {product.price !== null ? (
                 <>
-                  <p className="mt-4 font-bold">PKR {Number(product.price).toFixed(2)}</p>
+                  <ProductPrice product={product} className="mt-4 font-bold" />
                   {product.stock_quantity === 0 && (
                     <p className="mt-1 text-xs text-destructive">Out of stock</p>
                   )}

@@ -5,7 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useBasket } from "@/components/basket-provider";
-import { getBasketSubtotal, hasUnavailableBasketItem, resolveBasketLines } from "@/lib/basket";
+import {
+  getBasketLineTotal,
+  getBasketSubtotal,
+  hasUnavailableBasketItem,
+  resolveBasketLines,
+} from "@/lib/basket";
 import type { Product } from "@/lib/supabase/types";
 
 export function CheckoutPage({ products }: { products: Product[] }) {
@@ -38,7 +43,7 @@ export function CheckoutPage({ products }: { products: Product[] }) {
       phone: form.get("phone"),
       address: form.get("address"),
       notes: form.get("notes"),
-      expectedSubtotal: Number(subtotal.toFixed(2)),
+      expectedSubtotal: subtotal,
       items: basket.map(({ productId, quantity, size, colour }) => ({
         productId,
         quantity,
@@ -279,7 +284,7 @@ export function CheckoutPage({ products }: { products: Product[] }) {
                         )}
                       </div>
                       <p className="shrink-0 text-right text-sm font-semibold tabular-nums">
-                        PKR {((product?.price ?? 0) * quantity || 0).toFixed(2)}
+                        PKR {getBasketLineTotal(product, quantity).toFixed(2)}
                       </p>
                     </li>
                   ))}

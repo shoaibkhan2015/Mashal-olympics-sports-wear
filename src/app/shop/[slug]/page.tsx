@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ProductDetail } from "@/components/product-detail";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createPublicSupabaseClient } from "@/lib/supabase/public";
+import type { RelatedProduct } from "@/lib/product-pricing";
 import type { Product } from "@/lib/supabase/types";
 import { getStorefrontContent, contentString } from "@/lib/cms";
 import {
@@ -11,8 +12,6 @@ import {
   productColumns,
   withProductDetails,
 } from "@/lib/supabase/product-details";
-
-type RelatedProduct = Pick<Product, "id" | "slug" | "name" | "image_url" | "image_urls" | "price">;
 
 async function getProduct(slug: string): Promise<Product | null> {
   if (!isSupabaseConfigured()) return null;
@@ -70,7 +69,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const supabase = createPublicSupabaseClient();
   const { data: relatedProducts, error: relatedError } = await supabase
     .from("products")
-    .select("id, slug, name, image_url, image_urls, price")
+    .select("id, slug, name, image_url, image_urls, price, discount_percentage, effective_price")
     .eq("category_id", product.category_id)
     .eq("is_active", true)
     .not("price", "is", null)

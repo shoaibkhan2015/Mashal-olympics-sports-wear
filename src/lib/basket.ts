@@ -13,11 +13,20 @@ export function resolveBasketLines(
   }));
 }
 
+function getBasketLineMinorUnits(product: Product | null, quantity: number) {
+  return Math.round((product?.effective_price ?? 0) * 100) * quantity;
+}
+
+export function getBasketLineTotal(product: Product | null, quantity: number) {
+  return getBasketLineMinorUnits(product, quantity) / 100;
+}
+
 export function getBasketSubtotal(lines: ResolvedBasketLine[]) {
-  return lines.reduce(
-    (total, { product, quantity }) => total + (product?.price ?? 0) * quantity,
+  const subtotalInMinorUnits = lines.reduce(
+    (total, { product, quantity }) => total + getBasketLineMinorUnits(product, quantity),
     0,
   );
+  return subtotalInMinorUnits / 100;
 }
 
 export function hasUnavailableBasketItem(lines: ResolvedBasketLine[]) {

@@ -120,6 +120,18 @@ export function ProductAdminList({
                 className={inputClass}
               />
             </label>
+            <label className="grid gap-2 text-sm">
+              Discount (%)
+              <input
+                name="discount_percentage"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                defaultValue={product.discount_percentage || ""}
+                className={inputClass}
+              />
+            </label>
             <ProductImagePicker
               initialUrls={
                 product.image_urls?.length
