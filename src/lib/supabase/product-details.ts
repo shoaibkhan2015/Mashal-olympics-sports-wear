@@ -32,16 +32,8 @@ export function isProductDetailsSchemaError(
   error: { code?: string; message?: string } | null,
 ) {
   return (
-    error?.code === "42703" &&
-    [
-      "fabric_details",
-      "fit_details",
-      "care_instructions",
-      "customization_options",
-      "size_guide",
-      "fabric_image_urls",
-      "product_faqs",
-    ].some((column) => error.message?.includes(column))
+    (error?.code === "42703" || error?.code === "PGRST204") &&
+    productDetailsColumns.split(", ").some((column) => error.message?.includes(column))
   );
 }
 

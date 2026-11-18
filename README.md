@@ -16,6 +16,8 @@ Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.loca
 
 1. Create a Supabase project.
 2. Apply [`supabase/migrations/202611060001_initial_schema.sql`](./supabase/migrations/202611060001_initial_schema.sql), [`supabase/migrations/202611070001_storefront_cms.sql`](./supabase/migrations/202611070001_storefront_cms.sql), [`supabase/migrations/202611080001_product_catalog_enhancements.sql`](./supabase/migrations/202611080001_product_catalog_enhancements.sql), [`supabase/migrations/202611080002_knockout_rebrand.sql`](./supabase/migrations/202611080002_knockout_rebrand.sql), and [`supabase/migrations/202611080003_checkout_hardening.sql`](./supabase/migrations/202611080003_checkout_hardening.sql), in order in the Supabase SQL Editor. The migrations create the commerce schema, CMS content and media bucket, enhanced product gallery/options/inventory support, update saved storefront branding, and harden checkout with delivery-address storage and idempotent order creation. If earlier migrations were already applied, run only the unapplied migration(s); do not rerun an applied migration.
+
+   Continue with [`202611090001_fix_manual_order_currency.sql`](./supabase/migrations/202611090001_fix_manual_order_currency.sql) and [`202611100001_product_details.sql`](./supabase/migrations/202611100001_product_details.sql) in order. The product details migration enables saving fabric, fit, care, customization, size guide, and FAQ fields in the admin panel.
 3. Configure the two environment variables above in local development and your hosting provider, then redeploy.
 4. Create an Auth user for each staff member in Supabase Authentication. Assign administrator access to the intended account using the Supabase SQL Editor:
 

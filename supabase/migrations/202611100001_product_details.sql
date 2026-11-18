@@ -10,3 +10,5 @@ alter table public.products
 alter table public.products
   add constraint products_product_faqs_array
   check (jsonb_typeof(product_faqs) = 'array');
+
+notify pgrst, 'reload schema';
