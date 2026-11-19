@@ -1,23 +1,17 @@
+@reference "../globals.css";
+
 body:has(.admin-workspace) [data-storefront-chrome] {
   display: none;
 }
 
 .admin-workspace {
-  --background: #f4f6fa;
-  --foreground: #162233;
-  --card: #fff;
-  --muted: #eef1f6;
-  --muted-foreground: #506077;
-  --border: #dce3ed;
-  --input: #c6d0df;
-  --primary: #a51c38;
-  --primary-foreground: #fff;
-  --destructive: #a71d32;
-  --ring: #a51c38;
-  color-scheme: light;
+  --admin-accent-text: color-mix(in srgb, var(--primary) 60%, var(--foreground));
+  --admin-action: color-mix(in srgb, var(--primary) 86%, var(--background));
+  --admin-field-border: color-mix(in srgb, var(--input) 68%, var(--foreground));
+  color-scheme: dark;
   background: var(--background);
   color: var(--foreground);
-  font-family: system-ui, sans-serif;
+  @apply font-sans;
   font-size: 0.9375rem;
   min-height: 100dvh;
   display: grid;
@@ -25,8 +19,8 @@ body:has(.admin-workspace) [data-storefront-chrome] {
 }
 
 .admin-sidebar {
-  background: #162234;
-  color: #eaf0f8;
+  background: var(--secondary);
+  color: var(--foreground);
   padding: 1.5rem 1rem;
 }
 
@@ -43,7 +37,7 @@ body:has(.admin-workspace) [data-storefront-chrome] {
   margin: 0.25rem 0.6rem 2.5rem;
 }
 .admin-brand svg {
-  color: #df7389;
+  color: var(--admin-accent-text);
 }
 
 .admin-nav {
@@ -57,22 +51,22 @@ body:has(.admin-workspace) [data-storefront-chrome] {
   gap: 0.65rem;
   min-height: 2.75rem;
   padding: 0.65rem 0.75rem;
-  border-radius: 0.55rem;
+  @apply rounded-lg;
   font-size: 0.875rem;
   font-weight: 600;
 }
 .admin-nav a:hover,
 .admin-store-link:hover {
-  background: #25354d;
+  background: var(--muted);
 }
 .admin-nav a[aria-current="page"] {
-  background: #2c3b53;
-  box-shadow: inset 3px 0 #f1849a;
-  color: white;
+  background: color-mix(in srgb, var(--primary) 22%, var(--secondary));
+  box-shadow: inset 3px 0 var(--primary);
+  color: var(--foreground);
 }
 .admin-store-link {
   margin-top: 1.5rem;
-  color: #c4d0e2;
+  color: var(--muted-foreground);
 }
 .admin-nav svg,
 .admin-button svg {
@@ -84,7 +78,7 @@ body:has(.admin-workspace) [data-storefront-chrome] {
   align-items: center;
   justify-content: flex-end;
   gap: 0.9rem;
-  background: #fff;
+  background: var(--secondary);
   border-bottom: 1px solid var(--border);
   min-height: 4rem;
   padding: 0.6rem clamp(1rem, 4vw, 3rem);
@@ -112,8 +106,10 @@ body:has(.admin-workspace) [data-storefront-chrome] {
 .admin-heading h1,
 .admin-login h1 {
   font-size: clamp(1.75rem, 3vw, 2.4rem);
-  font-weight: 750;
-  letter-spacing: -0.045em;
+  @apply font-display;
+  font-weight: 400;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
   line-height: 1.12;
 }
 .admin-heading p {
@@ -130,25 +126,27 @@ body:has(.admin-workspace) [data-storefront-chrome] {
   min-height: 2.65rem;
   padding: 0.55rem 0.9rem;
   border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  background: #fff;
+  @apply rounded-full;
+  background: transparent;
   color: var(--foreground);
   cursor: pointer;
   white-space: nowrap;
   font-size: 0.85rem;
-  font-weight: 650;
+  font-weight: 600;
 }
 .admin-button:hover {
-  background: var(--muted);
+  border-color: var(--admin-accent-text);
 }
 .admin-button-primary {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: #fff;
+  background: var(--admin-action);
+  border-color: var(--admin-accent-text);
+  color: var(--primary-foreground);
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
 }
 .admin-button-primary:hover {
-  background: #83162c;
-  border-color: #83162c;
+  background: color-mix(in srgb, var(--admin-action) 86%, var(--background));
 }
 .admin-button:disabled {
   opacity: 0.65;
@@ -159,15 +157,15 @@ body:has(.admin-workspace) [data-storefront-chrome] {
   outline-offset: 3px;
 }
 .admin-sidebar :focus-visible {
-  outline-color: #ffa5b6;
+  outline-color: var(--admin-accent-text);
 }
 
 .admin-list {
   display: grid;
   border: 1px solid var(--border);
-  border-radius: 0.8rem;
+  @apply rounded-xl;
   overflow: hidden;
-  background: #fff;
+  background: var(--card);
 }
 .admin-list > .admin-button {
   margin-block: 0.7rem;
@@ -184,7 +182,7 @@ body:has(.admin-workspace) [data-storefront-chrome] {
   padding: 0.8rem 1.15rem;
 }
 .admin-row-columns {
-  background: #f8f9fc;
+  background: var(--secondary);
   color: var(--muted-foreground);
   font-size: 0.75rem;
   font-weight: 700;
@@ -193,7 +191,7 @@ body:has(.admin-workspace) [data-storefront-chrome] {
   border-top: 1px solid var(--border);
 }
 .admin-row-summary:hover {
-  background: #fbfcfe;
+  background: var(--card);
 }
 .admin-row-summary > :last-child {
   justify-self: end;
@@ -211,9 +209,9 @@ body:has(.admin-workspace) [data-storefront-chrome] {
   display: grid;
   place-items: center;
   overflow: hidden;
-  border-radius: 0.5rem;
-  background: #eef1f7;
-  color: #66768d;
+  @apply rounded-lg;
+  background: var(--muted);
+  color: var(--muted-foreground);
 }
 .admin-thumbnail img {
   width: 100%;
@@ -242,28 +240,28 @@ body:has(.admin-workspace) [data-storefront-chrome] {
 }
 .admin-status {
   justify-self: start;
-  color: #46566b;
-  background: #edf1f6;
-  border-radius: 99px;
+  color: var(--muted-foreground);
+  background: var(--muted);
+  @apply rounded-full;
   padding: 0.23rem 0.55rem;
   font-size: 0.72rem;
   font-weight: 700;
 }
 .admin-status-published {
-  color: #165b40;
-  background: #e5f5ec;
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--primary) 24%, var(--secondary));
 }
 .admin-row-editor {
   border-top: 1px solid var(--border);
-  background: #fafbfd;
+  background: var(--background);
   padding: clamp(0.8rem, 3vw, 1.5rem);
 }
 
 .admin-editor-card,
 .admin-login-card {
-  background: #fff;
+  background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 0.85rem;
+  @apply rounded-xl;
   padding: clamp(1rem, 3vw, 1.6rem);
 }
 .admin-catalog-form {
@@ -275,8 +273,8 @@ body:has(.admin-workspace) [data-storefront-chrome] {
   min-width: 0;
   padding: 0.85rem 1rem 1rem;
   border: 1px solid var(--border);
-  border-radius: 0.65rem;
-  background: #fff;
+  @apply rounded-lg;
+  background: var(--card);
 }
 .admin-fieldset legend {
   padding-inline: 0.35rem;
@@ -307,7 +305,7 @@ body:has(.admin-workspace) [data-storefront-chrome] {
 }
 .admin-required {
   margin-left: 0.25rem;
-  color: var(--primary);
+  color: var(--admin-accent-text);
   font-size: 0.71rem;
   font-weight: 700;
 }
@@ -316,10 +314,10 @@ body:has(.admin-workspace) [data-storefront-chrome] {
   width: 100%;
   min-width: 0;
   min-height: 2.7rem;
-  border: 1px solid var(--input);
-  border-radius: 0.5rem;
+  border: 1px solid var(--admin-field-border);
+  @apply rounded-lg;
   padding: 0.55rem 0.7rem;
-  background: #fff;
+  background: var(--background);
   color: var(--foreground);
   font-size: 0.9rem;
   font-weight: 450;
@@ -327,15 +325,12 @@ body:has(.admin-workspace) [data-storefront-chrome] {
 .admin-login input[name="password"] {
   padding-right: 3rem;
 }
-.admin-workspace :is(input, select, textarea):user-invalid {
-  border-color: var(--destructive);
-}
 .admin-field-grid > label > :is(input, select, textarea) {
   display: block;
   margin-block: 0.35rem;
 }
 .admin-workspace input[type="checkbox"] {
-  accent-color: var(--primary);
+  accent-color: var(--admin-accent-text);
   width: 1rem;
   height: 1rem;
 }
@@ -353,8 +348,8 @@ body:has(.admin-workspace) [data-storefront-chrome] {
 }
 .admin-optional {
   border: 1px solid var(--border);
-  border-radius: 0.6rem;
-  background: #fff;
+  @apply rounded-lg;
+  background: var(--card);
 }
 .admin-optional summary,
 .admin-page-editor summary {
@@ -374,17 +369,17 @@ body:has(.admin-workspace) [data-storefront-chrome] {
 .admin-notice {
   margin-bottom: 1rem;
   padding: 0.75rem 1rem;
-  border: 1px solid #a5d9bb;
-  border-radius: 0.55rem;
-  background: #ebf8ef;
-  color: #185b3e;
+  border: 1px solid var(--border);
+  @apply rounded-lg;
+  background: var(--secondary);
+  color: var(--foreground);
   font-size: 0.88rem;
   font-weight: 600;
 }
 .admin-notice-error {
-  background: #fff0f2;
-  border-color: #e8a7b2;
-  color: #912139;
+  background: color-mix(in srgb, var(--destructive) 13%, var(--background));
+  border-color: var(--destructive);
+  color: var(--admin-accent-text);
 }
 .admin-login {
   grid-template-columns: minmax(0, 27rem);
@@ -402,7 +397,7 @@ body:has(.admin-workspace) [data-storefront-chrome] {
   align-items: center;
   gap: 0.35rem;
   margin-top: 1.2rem;
-  color: var(--primary);
+  color: var(--admin-accent-text);
   font-weight: 650;
   font-size: 0.85rem;
 }
@@ -474,4 +469,29 @@ body:has(.admin-workspace) [data-storefront-chrome] {
   .admin-fieldset {
     padding-inline: 0.65rem;
   }
+}
+
+/* Keep secondary text and controls legible on the dark storefront surfaces. */
+.admin-workspace input::placeholder,
+.admin-workspace textarea::placeholder {
+  color: var(--muted-foreground);
+  opacity: 1;
+}
+
+.admin-workspace :is(input, select, textarea):user-invalid {
+  border-color: var(--admin-accent-text);
+}
+
+.admin-workspace :is(.text-primary, .text-destructive) {
+  color: var(--admin-accent-text);
+}
+
+.admin-workspace input::file-selector-button,
+.admin-workspace .hover\:bg-destructive:hover {
+  background-color: var(--admin-action);
+  color: var(--primary-foreground);
+}
+
+.admin-workspace input[type="file"] {
+  border-color: var(--admin-field-border);
 }
